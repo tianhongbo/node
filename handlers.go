@@ -7,11 +7,30 @@ import (
 	"io/ioutil"
 	"net/http"
 	"strconv"
+	"os/exec"
+	"strings"
 
 	"github.com/gorilla/mux"
 )
 
 func Index(w http.ResponseWriter, r *http.Request) {
+	//out, err := exec.Command("emulator -avd  Android_2.2 -no-window -verbose -no-boot-anim -noskin").Output()
+	cmd := "emulator -avd  Android_2.2 -no-window -verbose -no-boot-anim -noskin &"
+	//cmd := "android list target"
+	parts := strings.Fields(cmd)
+  	head := parts[0]
+  	parts = parts[1:len(parts)]
+	fmt.Println(head, parts)
+
+  	out, err := exec.Command(head,parts...).Output()
+
+
+	//out, err := exec.Command("android").Output()
+	if err != nil {
+		fmt.Println("Launch emulator failure: %s \n %s", err, out)
+	} else {
+		fmt.Println("Launch successfully:  %s", out)
+	}
 	fmt.Fprint(w, "Welcome!\n")
 }
 
