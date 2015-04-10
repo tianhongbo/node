@@ -9,14 +9,15 @@ import (
 	"strconv"
 	"os/exec"
 	"strings"
+	"bytes"
 
 	"github.com/gorilla/mux"
 )
 
-func Index(w http.ResponseWriter, r *http.Request) {
+func Index_bak(w http.ResponseWriter, r *http.Request) {
 	//out, err := exec.Command("emulator -avd  Android_2.2 -no-window -verbose -no-boot-anim -noskin").Output()
-	cmd := "emulator -avd  Android_2.2 -no-window -verbose -no-boot-anim -noskin &"
-	//cmd := "android list target"
+	//cmd := "emulator -avd  Android_2.2 -no-window -verbose -no-boot-anim -noskin &"
+	cmd := "android list target &"
 	parts := strings.Fields(cmd)
   	head := parts[0]
   	parts = parts[1:len(parts)]
@@ -27,12 +28,38 @@ func Index(w http.ResponseWriter, r *http.Request) {
 
 	//out, err := exec.Command("android").Output()
 	if err != nil {
-		fmt.Println("Launch emulator failure: %s \n %s", err, out)
+		fmt.Println("Launch emulator failure: %s \n %s", err, string(out))
 	} else {
-		fmt.Println("Launch successfully:  %s", out)
+		fmt.Println("Launch successfully:  %s", string(out))
 	}
 	fmt.Fprint(w, "Welcome!\n")
 }
+
+
+func Index(w http.ResponseWriter, r *http.Request) {
+	
+	cmdStr := "emulator -avd  Android_2.2 -no-window -verbose -no-boot-anim -noskin"
+	//cmdStr := "android list target"
+	parts := strings.Fields(cmdStr)
+	command := parts[0]
+	args := parts[1:len(parts)]
+	fmt.Println(command, args)
+
+        //parts := strings.Fields(cmd)
+        //head := parts[0]
+        //parts = parts[1:len(parts)]
+        //fmt.Println(head, parts)
+
+	cmd := exec.Command(command, args...)
+	randomBytes := &bytes.Buffer{}
+	cmd.Stdout = randomBytes
+
+	// Start command asynchronously
+	err := cmd.Start()
+	fmt.Println("A emulator is launched: %s \n %s", err, randomBytes.String())
+	fmt.Fprintf(w, "Successful!\n")
+}
+
 
 func TodoIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
