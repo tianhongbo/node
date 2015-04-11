@@ -36,4 +36,23 @@ var routes = Routes{
 		"/todos/{todoId}",
 		TodoShow,
 	},
+	Route{
+		"emulator",
+		"GET",
+		"/emulator",
+		ShowEmulator,
+	},
+	Route{
+		"emulator",
+		"POST",
+		"/emulator",
+		StartEmulator,
+	},
+	Route{
+		"emulator",
+		"DELETE",
+		"/emulator",
+		StopEmulator,
+	},
+	
 }
