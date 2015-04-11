@@ -43,7 +43,7 @@ type ApiStopEmulatorResponse struct {
 }
 
 type ApiShowEmulatorRequest struct {
-	Id	uint64	`json:"id"`
+	//Id	uint64	`json:"id"`
 	
 }
 

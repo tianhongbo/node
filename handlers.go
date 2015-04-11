@@ -122,26 +122,13 @@ func StopEmulator(w http.ResponseWriter, r *http.Request) {
 
 func ShowEmulator(w http.ResponseWriter, r *http.Request) {
 	
-	var req ApiShowEmulatorRequest
 	var res ApiShowEmulatorResponse
+	var err error
+	
+	emulatorId,_ := strconv.ParseUint(r.URL.Query().Get("id"), 10, 64)
+	fmt.Println("the emulator id in the request is: ", emulatorId)
 
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-	if err != nil {
-		panic(err)
-	}
-	if err := r.Body.Close(); err != nil {
-		panic(err)
-	}
-
-	if err := json.Unmarshal(body, &req); err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			panic(err)
-		}
-	}
-
-	emulator := emulators.getEmulator(req.Id)
+	emulator := emulators.getEmulator(emulatorId)
 	if emulator != nil {
 		res.Id = emulator.id
 		res.Name = emulator.name
@@ -157,7 +144,7 @@ func ShowEmulator(w http.ResponseWriter, r *http.Request) {
 		}
 
 	} else {
-		fmt.Println("can't find this emulator. d%", req.Id)
+		fmt.Println("can't find this emulator. d%", emulatorId)
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
