@@ -30,6 +30,8 @@ func StartEmulator(w http.ResponseWriter, r *http.Request) {
 	}
 	
 	//fmt.Println("the body of request is: ", string(body))
+
+	w.Header().Set("Access-Control-Allow-Origin", "*")
 	
 	if err := json.Unmarshal(body, &req); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -124,32 +126,57 @@ func ShowEmulator(w http.ResponseWriter, r *http.Request) {
 	
 	var res ApiShowEmulatorResponse
 	var err error
+
+	str := r.URL.Query().Get("id")
+	if str != "" { 
+	// request carries "id" parameter
+		emulatorId,_ := strconv.ParseUint(str, 10, 64)
+		fmt.Println("the emulator id in the request is: ", emulatorId)
 	
-	emulatorId,_ := strconv.ParseUint(r.URL.Query().Get("id"), 10, 64)
-	fmt.Println("the emulator id in the request is: ", emulatorId)
+		emulator := emulators.getEmulator(emulatorId)
+		if emulator != nil {
+			res.Id = emulator.id
+			res.Name = emulator.name
+			res.Port = emulator.port
+			res.StartTime = emulator.startTime
+			res.StopTime = emulator.stopTime
+		
+			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+			w.WriteHeader(http.StatusOK)
+		
+			if err := json.NewEncoder(w).Encode(res); err != nil {
+				panic(err)
+			}	
 
-	emulator := emulators.getEmulator(emulatorId)
-	if emulator != nil {
-		res.Id = emulator.id
-		res.Name = emulator.name
-		res.Port = emulator.port
-		res.StartTime = emulator.startTime
-		res.StopTime = emulator.stopTime
-		
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusCreated)
-		
-		if err := json.NewEncoder(w).Encode(res); err != nil {
-			panic(err)
+		} else {
+			fmt.Println("can't find this emulator. d%", emulatorId)
+			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+			w.WriteHeader(422) // unprocessable entity
+			if err := json.NewEncoder(w).Encode(err); err != nil {
+				panic(err)
+			}
 		}
-
 	} else {
-		fmt.Println("can't find this emulator. d%", emulatorId)
+	// no "id" para in the request from client
+
+		var ress []ApiShowEmulatorResponse
+		for _, e := range emulators.emulators {
+			if e.status == true {
+				res := ApiShowEmulatorResponse {e.id, 
+								e.name, 
+								e.port, 
+								e.startTime,
+								e.stopTime,
+								}
+				ress = append(ress, res)
+			}
+		}
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		if err := json.NewEncoder(w).Encode(err); err != nil {
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(ress); err != nil {
 			panic(err)
 		}
+
 	}
 
 	emulators.showAll()
