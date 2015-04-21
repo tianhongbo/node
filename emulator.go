@@ -81,7 +81,7 @@ func (emu *Emulator) init(port uint16) {
         emu.port = port
 
         //init cmd emulator64-arm -avd myandroid -no-window -verbose -no-boot-anim -noskin
-        cmdStr := "emulator64-arm -avd myandroid -no-window -verbose -no-boot-anim -noskin -port " + strconv.Itoa(int(emu.port))
+        cmdStr := "emulator64-arm -avd android-api-22 -no-window -verbose -no-boot-anim -noskin -port " + strconv.Itoa(int(emu.port))
         parts := strings.Fields(cmdStr)
         head := parts[0]
         parts = parts[1:len(parts)]

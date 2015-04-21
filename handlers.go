@@ -29,18 +29,18 @@ func StartEmulator(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 	
-	//fmt.Println("the body of request is: ", string(body))
+	fmt.Println("the body of request is: ", r.Header)
+	fmt.Println("the body of request is: ", string(body))
 
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	
-	if err := json.Unmarshal(body, &req); err != nil {
+	if err := json.Unmarshal(body, &req); err != nil || req.Id == 0 {
+		fmt.Println("the Json from request is: ", req)
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			panic(err)
 		}
 	}
-	//fmt.Println("the Json from request is: ", req)
+	fmt.Println("the Json from request is: ", req)
 
 	emulator := emulators.allocate()
 
@@ -86,7 +86,9 @@ func StopEmulator(w http.ResponseWriter, r *http.Request) {
 	if err := r.Body.Close(); err != nil {
 		panic(err)
 	}
-	//fmt.Println("the body of request is: ", string(body))
+	fmt.Println("the head of request is: ", r.Header)
+	fmt.Println("the body of request is: ", string(body))
+	
 	if err := json.Unmarshal(body, &req); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
@@ -95,6 +97,8 @@ func StopEmulator(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	fmt.Println("the json of request is: ", req)
+	
 	emulator := emulators.getEmulator(req.Id)
 	if emulator != nil {
 		emulator.stop()

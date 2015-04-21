@@ -1,0 +1,13 @@
+How to configure? Please follow this prcedure:
+1. /etc/environment
+1)add emulator and node bin to PATH
+/home/ubuntu/android-sdk-linux/tools
+/home/ubuntu/node/bin
+
+2)add GOPATH
+/home/ubuntu/node
+
+2. /etc/rc.local
+start node automatically when instance booting
+su ubuntu - -c /home/ubuntu/node/bin/node
+

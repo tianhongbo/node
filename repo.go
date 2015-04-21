@@ -44,6 +44,7 @@ func (emus *Emulators) showAll() {
 
 
 func (emus *Emulators) getEmulator(id uint64)  (*Emulator) {
+	if id == 0 {return nil}
 	for i,_ := range emus.emulators {
 		if emus.emulators[i].id == id {
 			fmt.Println(emus.emulators[i])
