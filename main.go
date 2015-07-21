@@ -10,5 +10,5 @@ func main() {
 	emulators.init()
 	router := NewRouter()
 
-	log.Fatal(http.ListenAndServe(":8888", router))
+	log.Fatal(http.ListenAndServe(":8080", router))
 }
