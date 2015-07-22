@@ -6,8 +6,10 @@ import (
 	//"bytes"
 	//"os/exec"
 	//"strconv"
+	"errors"
 )
 
+//Emulators
 const EMULATOR_MIN_PORT = 5554
 const EMULATOR_MAX_PORT = 5584
 const EMULATOR_NUM = (EMULATOR_MAX_PORT-EMULATOR_MIN_PORT)/2
@@ -54,43 +56,73 @@ func (emus *Emulators) getEmulator(id uint64)  (*Emulator) {
 	return nil
 }
 
+// Mobile hubs
+var hubs Hubs
 
 
-var currentId int
-
-var todos Todos
-
-
-// Give us some seed data
+// Initiate the repository data
 func init() {
-	RepoCreateTodo(Todo{Name: "Write presentation"})
-	RepoCreateTodo(Todo{Name: "Host meetup"})
+	//RepoCreateHub(Hub{Name: "SJSU_GUEST_WIFI"})
+	//RepoCreateHub(Hub{Name: "AT&T_LTE"})
 }
 
-func RepoFindTodo(id int) Todo {
-	for _, t := range todos {
+func RepoFindHub(id int) (Hub,error) {
+	for _, t := range hubs {
 		if t.Id == id {
-			return t
+			return t, nil
 		}
 	}
-	// return empty Todo if not found
-	return Todo{}
+	// return empty Hub if not found
+	return Hub{}, errors.New("can't find the hub.")
 }
 
-//this is bad, I don't think it passes race condtions
-func RepoCreateTodo(t Todo) Todo {
-	currentId += 1
-	t.Id = currentId
-	todos = append(todos, t)
+func RepoCreateHub(t Hub) Hub {
+	hubs = append(hubs, t)
 	return t
 }
 
-func RepoDestroyTodo(id int) error {
-	for i, t := range todos {
+func RepoDestroyHub(id int) error {
+	for i, t := range hubs {
 		if t.Id == id {
-			todos = append(todos[:i], todos[i+1:]...)
+			hubs = append(hubs[:i], hubs[i+1:]...)
 			return nil
 		}
 	}
-	return fmt.Errorf("Could not find Todo with id of %d to delete", id)
+	return fmt.Errorf("Could not find Hub with id of %d to delete", id)
+}
+
+func RepoAttachHub(id int, connection Connection) (int, error) {
+	for i, t := range hubs {
+		if t.Id == id {
+			for j, c := range hubs[i].Connections {
+				if c.ResourceId == 0 && c.ResourceType == "" {
+					hubs[i].Connections[j].ResourceId = connection.ResourceId
+					hubs[i].Connections[j].ResourceType = connection.ResourceType
+					return c.Port, nil
+				}
+			}
+			return 0, fmt.Errorf("Could not find free port to attach in the hub id of %d", id)
+		}
+
+	}
+
+	return 0, fmt.Errorf("Could not find Hub with id of %d to attach", id)
+}
+
+func RepoDetachHub(id int, connection Connection) error {
+	for i, t := range hubs {
+		if t.Id == id {
+			for j, c := range hubs[i].Connections {
+				if c.ResourceId == connection.ResourceId && c.ResourceType == connection.ResourceType {
+					hubs[i].Connections[j].ResourceId = 0
+					hubs[i].Connections[j].ResourceType = ""
+					return nil
+				}
+			}
+			return errors.New("can't find the resource id.")
+		}
+
+	}
+
+	return errors.New("can't find the hub.")
 }

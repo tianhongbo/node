@@ -10,7 +10,7 @@ import (
 	"os/exec"
 	"strings"
 	"bytes"
-//	"time"
+	"time"
 	"github.com/gorilla/mux"
 )
 
@@ -216,7 +216,7 @@ func Index(w http.ResponseWriter, r *http.Request) {
 func HubIndex(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(todos); err != nil {
+	if err := json.NewEncoder(w).Encode(hubs); err != nil {
 		panic(err)
 	}
 }
@@ -225,25 +225,29 @@ func HubShow(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	var hubId int
 	var err error
-	if hubId, err = strconv.Atoi(vars["hubId"]); err != nil {
+	if hubId, err = strconv.Atoi(vars["id"]); err != nil {
 		panic(err)
 	}
-	todo := RepoFindTodo(hubId)
-	if todo.Id > 0 {
+	hub,err := RepoFindHub(hubId)
+
+	if err == nil {
+		//Find the hub
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(todo); err != nil {
+		if err := json.NewEncoder(w).Encode(hub); err != nil {
 			panic(err)
 		}
-		return
+	} else {
+		// If we didn't find a hub, 404
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusNotFound)
+		if err := json.NewEncoder(w).Encode(jsonErr{Code: http.StatusNotFound, Text: "Not Found"}); err != nil {
+			panic(err)
+		}
 	}
 
-	// If we didn't find it, 404
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusNotFound)
-	if err := json.NewEncoder(w).Encode(jsonErr{Code: http.StatusNotFound, Text: "Not Found"}); err != nil {
-		panic(err)
-	}
+
+	return
 
 }
 
@@ -251,37 +255,37 @@ func HubDelete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	var hubId int
 	var err error
-	if hubId, err = strconv.Atoi(vars["hubId"]); err != nil {
+	if hubId, err = strconv.Atoi(vars["id"]); err != nil {
 		panic(err)
 	}
-	todo := RepoFindTodo(hubId)
-	if todo.Id > 0 {
+	err = RepoDestroyHub(hubId)
+	if err == nil {
+		// Find the hub and deleted successfully
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(todo); err != nil {
+
+	} else {
+		// If we didn't find it, 404
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusNotFound)
+		if err := json.NewEncoder(w).Encode(jsonErr{Code: http.StatusNotFound, Text: "Not Found"}); err != nil {
 			panic(err)
 		}
-		return
+
 	}
 
-	// If we didn't find it, 404
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusNotFound)
-	if err := json.NewEncoder(w).Encode(jsonErr{Code: http.StatusNotFound, Text: "Not Found"}); err != nil {
-		panic(err)
-	}
-
+	return
 }
 
 
 /*
 Test with this curl command:
 
-curl -H "Content-Type: application/json" -d '{"name":"New Todo"}' http://localhost:8080/todos
+curl -H "Content-Type: application/json" -d '{"name":"New Hub"}' http://localhost:8080/hubs
 
 */
 func HubCreate(w http.ResponseWriter, r *http.Request) {
-	var todo Todo
+	var hub Hub
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		panic(err)
@@ -289,7 +293,7 @@ func HubCreate(w http.ResponseWriter, r *http.Request) {
 	if err := r.Body.Close(); err != nil {
 		panic(err)
 	}
-	if err := json.Unmarshal(body, &todo); err != nil {
+	if err := json.Unmarshal(body, &hub); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
@@ -297,7 +301,16 @@ func HubCreate(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	t := RepoCreateTodo(todo)
+	//Initialize the connections
+
+	for i := 0; i < hub.PortNum; i++ {
+		hub.Connections = append(hub.Connections, Connection{i, "", 0})
+	}
+	//Initialize the start time
+	hub.StartTime = time.Now()
+	
+
+	t := RepoCreateHub(hub)
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(t); err != nil {
@@ -305,20 +318,16 @@ func HubCreate(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func PortAttach(w http.ResponseWriter, r *http.Request) {
+func HubAttach(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	var hubId, deviceId int
-	var todo Todo
+	var hubId int
+	var connection Connection
 	var err error
 
-	if hubId, err = strconv.Atoi(vars["hubId"]); err != nil {
+	if hubId, err = strconv.Atoi(vars["id"]); err != nil {
 		panic(err)
 	}
 
-	if deviceId, err = strconv.Atoi(vars["deviceId"]); err != nil {
-		panic(err)
-	}
-	fmt.Println("Receive port attach req with hubId = ", hubId, ", deviceId = ", deviceId)
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		panic(err)
@@ -326,51 +335,94 @@ func PortAttach(w http.ResponseWriter, r *http.Request) {
 	if err := r.Body.Close(); err != nil {
 		panic(err)
 	}
-	if err := json.Unmarshal(body, &todo); err != nil {
+
+	if err := json.Unmarshal(body, &connection); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
-			panic(err)
-		}
-	}
-
-	t := RepoCreateTodo(todo)
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusCreated)
-	if err := json.NewEncoder(w).Encode(t); err != nil {
-		panic(err)
-	}
-}
-
-func PortDetach(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	var hubId,deviceId int
-	var err error
-	if hubId, err = strconv.Atoi(vars["hubId"]); err != nil {
-		panic(err)
-	}
-	if deviceId, err = strconv.Atoi(vars["deviceId"]); err != nil {
-		panic(err)
-	}
-	fmt.Println("Receive port detach request with hubId = ", hubId, ", deviceId = ", deviceId)
-
-	todo := RepoFindTodo(hubId)
-	if todo.Id > 0 {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(todo); err != nil {
 			panic(err)
 		}
 		return
 	}
 
-	// If we didn't find it, 404
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusNotFound)
-	if err := json.NewEncoder(w).Encode(jsonErr{Code: http.StatusNotFound, Text: "Not Found"}); err != nil {
+	if i ,err := RepoAttachHub(hubId, connection); err == nil {
+		// attach successfully
+
+		// manipulate the device network
+		fmt.Println("Turn on the intenet connection ")
+
+		// respond
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusCreated)
+		t := AttachRsp{connection.ResourceType, connection.ResourceId, hubId, i}
+		if err := json.NewEncoder(w).Encode(t); err != nil {
+			panic(err)
+		}
+
+	} else {
+		// attach failed
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		if err := json.NewEncoder(w).Encode(jsonErr{Code: 422, Text: "No available port."}); err != nil {
+			panic(err)
+		}
+
+	}
+
+	return
+
+}
+
+func HubDetach(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	var hubId int
+	var err error
+
+	connection := Connection{}
+
+	if hubId, err = strconv.Atoi(vars["id"]); err != nil {
 		panic(err)
 	}
 
+
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	if err != nil {
+		panic(err)
+	}
+	if err := r.Body.Close(); err != nil {
+		panic(err)
+	}
+
+	if err := json.Unmarshal(body, &connection); err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			panic(err)
+		}
+		return
+	}
+
+	if err := RepoDetachHub(hubId, connection); err == nil {
+		// Detach successfully
+
+		// manipulate the device network
+		fmt.Println("Turn off the intenet connection ")
+
+		// respond
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+
+	} else {
+		// detach failed
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusNotFound)
+		if err := json.NewEncoder(w).Encode(jsonErr{Code: http.StatusNotFound, Text: "Not Found"}); err != nil {
+			panic(err)
+		}
+
+	}
+
+	return
 }
 
 
