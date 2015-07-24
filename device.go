@@ -14,6 +14,8 @@ import (
 "stop_time": "0001-01-01T00:00:00Z"
 */
 
+//try
+
 type Device struct {
 	IMEI string `json: "imei"`
 	Name string	`json: "name"`
