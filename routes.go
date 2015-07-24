@@ -22,20 +22,54 @@ var routes = Routes{
 		"EmulatorIndex",
 		"GET",
 		"/emulators",
-		ShowEmulator,
+		EmulatorIndex,
 	},
 	Route{
 		"EmulatorCreate",
 		"POST",
 		"/emulators",
-		StartEmulator,
+		EmulatorCreate,
+	},
+	Route{
+		"EmulatorDelete",
+		"GET",
+		"/emulators/{id}",
+		EmulatorShow,
 	},
 	Route{
 		"EmulatorDelete",
 		"DELETE",
-		"/emulators",
-		StopEmulator,
+		"/emulators/{id}",
+		EmulatorDestroy,
 	},
+	//devices
+
+	Route{
+		"Devices",
+		"GET",
+		"/devices",
+		DeviceIndex,
+	},
+	Route{
+		"DeviceCreate",
+		"POST",
+		"/devices",
+		DeviceCreate,
+	},
+	Route{
+		"DeviceShow",
+		"GET",
+		"/devices/{imei}",
+		DeviceShow,
+	},
+	Route{
+		"DeviceDelete",
+		"DELETE",
+		"/devices/{imei}",
+		DeviceDelete,
+	},
+
+	//hubs
 	Route{
 		"Hubs",
 		"GET",

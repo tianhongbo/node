@@ -9,6 +9,17 @@ import (
 	"errors"
 )
 
+
+// Initiate the repository data
+func init() {
+	//RepoCreateHub(Hub{Name: "SJSU_GUEST_WIFI"})
+	//RepoCreateHub(Hub{Name: "AT&T_LTE"})
+	RepoCreateDeviceInventory(Device{IMEI:"353188020902632", ADBName:"G1002de5a082", VNCPort: 5900, SSHPort: 22, ConnectedHostname: THIS_HOST_NAME})
+	RepoCreateDeviceInventory(Device{IMEI:"353188020902633", ADBName:"G1002de5a083", VNCPort: 5901, SSHPort: 23, ConnectedHostname: THIS_HOST_NAME})
+	RepoCreateDeviceInventory(Device{IMEI:"353188020902634", ADBName:"G1002de5a084", VNCPort: 5902, SSHPort: 24, ConnectedHostname: THIS_HOST_NAME})
+}
+
+const THIS_HOST_NAME = "host101"
 //Emulators
 const EMULATOR_MIN_PORT = 5554
 const EMULATOR_MAX_PORT = 5584
@@ -59,12 +70,6 @@ func (emus *Emulators) getEmulator(id uint64)  (*Emulator) {
 // Mobile hubs
 var hubs Hubs
 
-
-// Initiate the repository data
-func init() {
-	//RepoCreateHub(Hub{Name: "SJSU_GUEST_WIFI"})
-	//RepoCreateHub(Hub{Name: "AT&T_LTE"})
-}
 
 func RepoFindHub(id int) (Hub,error) {
 	for _, t := range hubs {
@@ -125,4 +130,89 @@ func RepoDetachHub(id int, connection Connection) error {
 	}
 
 	return errors.New("can't find the hub.")
+}
+
+/*
+The following are devices
+ */
+
+var devices Devices
+
+func RepoFindDevice(imei string) (Device,error) {
+	for _, d := range devices {
+		if d.IMEI == imei {
+			return d, nil
+		}
+	}
+	// return empty Hub if not found
+	return Device{}, errors.New("can't find the device.")
+}
+
+func RepoCreateDevice(d Device) Device {
+	devices = append(devices, d)
+	return d
+}
+
+func RepoDestroyDevice(imei string) error {
+	for i, d := range devices {
+		if d.IMEI == imei {
+			devices = append(devices[:i], devices[i+1:]...)
+			return nil
+		}
+	}
+	return fmt.Errorf("Could not find device with id of %d to destroy", imei)
+}
+
+/*
+The following are device inventories
+ */
+
+var inventories Inventroies
+
+func RepoFindDeviceInventory(imei string) (Device,error) {
+	for _, d := range inventories {
+		if d.IMEI == imei {
+			return d, nil
+		}
+	}
+	// return empty Hub if not found
+	return Device{}, errors.New("can't find the device in the inventory.")
+}
+
+func RepoCreateDeviceInventory(d Device) Device {
+	inventories = append(inventories, d)
+	return d
+}
+
+func RepoDestroyDeviceInventory(imei string) error {
+	for i, d := range inventories {
+		if d.IMEI == imei {
+			inventories = append(inventories[:i], inventories[i+1:]...)
+			return nil
+		}
+	}
+	return fmt.Errorf("Could not find device in the inventory with id of %d to destroy", imei)
+}
+
+func RepoAllocateDeviceInventory(imei string) (Device, error) {
+	for _, d := range inventories {
+		if d.IMEI == imei {
+			fmt.Println("Device of IMEI is allocated.\n")
+			return d, nil
+		}
+	}
+	// return empty Hub if not found
+	return Device{}, errors.New("can't find the device in the inventory.")
+}
+
+func RepoFreeDeviceInventory(imei string) error {
+	for _, d := range inventories {
+		if d.IMEI == imei {
+			fmt.Println("Device of IMEI is free.")
+			return nil
+
+		}
+	}
+	// return empty Hub if not found
+	return errors.New("can't find the device in the inventory.")
 }

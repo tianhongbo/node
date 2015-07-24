@@ -14,7 +14,44 @@ import (
 	"github.com/gorilla/mux"
 )
 
-func StartEmulator(w http.ResponseWriter, r *http.Request) {
+
+
+func Index(w http.ResponseWriter, r *http.Request) {
+
+	cmdStr := "emulator -avd  Android_2.2 -no-window -verbose -no-boot-anim -noskin"
+	//cmdStr := "android list target"
+	parts := strings.Fields(cmdStr)
+	command := parts[0]
+	args := parts[1:len(parts)]
+	fmt.Println(command, args)
+
+	//parts := strings.Fields(cmd)
+	//head := parts[0]
+	//parts = parts[1:len(parts)]
+	//fmt.Println(head, parts)
+
+	cmd := exec.Command(command, args...)
+	randomBytes := &bytes.Buffer{}
+	cmd.Stdout = randomBytes
+
+	// Start command asynchronously
+	err := cmd.Start()
+	fmt.Println("A emulator is launched: %s \n %s", err, randomBytes.String())
+	fmt.Fprintf(w, "Successful!\n")
+}
+
+// Emulator
+// /emulators GET
+func EmulatorIndex(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(emulators); err != nil {
+		panic(err)
+	}
+}
+
+// /emulators POST
+func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 	
 	var req ApiStartEmulatorRequest
 	var res ApiStartEmulatorResponse
@@ -74,7 +111,9 @@ func StartEmulator(w http.ResponseWriter, r *http.Request) {
 	emulators.showAll()
 }
 
-func StopEmulator(w http.ResponseWriter, r *http.Request) {
+
+// /emulators/{id} DELETE
+func EmulatorDestroy(w http.ResponseWriter, r *http.Request) {
 	
 	var req ApiStopEmulatorRequest
 	var res ApiStopEmulatorResponse
@@ -126,7 +165,8 @@ func StopEmulator(w http.ResponseWriter, r *http.Request) {
 	emulators.showAll()
 }
 
-func ShowEmulator(w http.ResponseWriter, r *http.Request) {
+// /emulators/{id} GET
+func EmulatorShow(w http.ResponseWriter, r *http.Request) {
 	
 	var res ApiShowEmulatorResponse
 	var err error
@@ -184,32 +224,6 @@ func ShowEmulator(w http.ResponseWriter, r *http.Request) {
 	}
 
 	emulators.showAll()
-}
-
-
-
-func Index(w http.ResponseWriter, r *http.Request) {
-	
-	cmdStr := "emulator -avd  Android_2.2 -no-window -verbose -no-boot-anim -noskin"
-	//cmdStr := "android list target"
-	parts := strings.Fields(cmdStr)
-	command := parts[0]
-	args := parts[1:len(parts)]
-	fmt.Println(command, args)
-
-        //parts := strings.Fields(cmd)
-        //head := parts[0]
-        //parts = parts[1:len(parts)]
-        //fmt.Println(head, parts)
-
-	cmd := exec.Command(command, args...)
-	randomBytes := &bytes.Buffer{}
-	cmd.Stdout = randomBytes
-
-	// Start command asynchronously
-	err := cmd.Start()
-	fmt.Println("A emulator is launched: %s \n %s", err, randomBytes.String())
-	fmt.Fprintf(w, "Successful!\n")
 }
 
 
@@ -425,4 +439,118 @@ func HubDetach(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
+/*
+Device Operation
+ */
+
+// /devices GET
+func DeviceIndex(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(devices); err != nil {
+		panic(err)
+	}
+}
+
+// /device POST
+func DeviceCreate(w http.ResponseWriter, r *http.Request) {
+	var d,inventory Device
+
+	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+	if err != nil {
+		panic(err)
+	}
+	if err := r.Body.Close(); err != nil {
+		panic(err)
+	}
+	if err := json.Unmarshal(body, &d); err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			panic(err)
+		}
+		return
+	}
+
+	if  inventory, err = RepoAllocateDeviceInventory(d.IMEI); err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusNotFound)
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			panic(err)
+		}
+		return
+	}
+
+	d.ADBName = inventory.ADBName
+	d.ConnectedHostname = inventory.ConnectedHostname
+	d.SSHPort = inventory.SSHPort
+	d.VNCPort = inventory.VNCPort
+
+	//Initialize the start time
+	d.StartTime = time.Now()
+
+	d = RepoCreateDevice(d)
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusCreated)
+	if err := json.NewEncoder(w).Encode(d); err != nil {
+		panic(err)
+	}
+
+	return
+}
+
+// /devices/{imei} GET
+func DeviceShow(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	var imei string
+	var err error
+	if imei = vars["imei"]; imei == "" {
+		panic(err)
+	}
+	if d,err := RepoFindDevice(imei); err == nil {
+		//Find the device
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(d); err != nil {
+			panic(err)
+		}
+	} else {
+		// If we didn't find a device, 404
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusNotFound)
+		if err := json.NewEncoder(w).Encode(jsonErr{Code: http.StatusNotFound, Text: "Not Found"}); err != nil {
+			panic(err)
+		}
+	}
+
+
+	return
+
+}
+
+// /devices/{imei}
+func DeviceDelete(w http.ResponseWriter, r *http.Request) {
+	vars := mux.Vars(r)
+	var imei string
+	var err error
+	if imei = vars["imei"]; imei == "" {
+		panic(err)
+	}
+	if err = RepoDestroyDevice(imei); err == nil {
+		// Find the hub and deleted successfully
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+
+	} else {
+		// If we didn't find it, 404
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusNotFound)
+		if err := json.NewEncoder(w).Encode(jsonErr{Code: http.StatusNotFound, Text: "Not Found"}); err != nil {
+			panic(err)
+		}
+
+	}
+
+	return
+}
 
