@@ -12,6 +12,7 @@ import (
 	"bytes"
 	"time"
 	"github.com/gorilla/mux"
+
 )
 
 
@@ -52,10 +53,9 @@ func EmulatorIndex(w http.ResponseWriter, r *http.Request) {
 
 // /emulators POST
 func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
-	
-	var req ApiStartEmulatorRequest
-	var res ApiStartEmulatorResponse
-	
+	var port int
+	var e Emulator
+
 	//emulators.showAll()
 	
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
@@ -69,161 +69,86 @@ func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 	fmt.Println("the body of request is: ", r.Header)
 	fmt.Println("the body of request is: ", string(body))
 
-	if err := json.Unmarshal(body, &req); err != nil || req.Id == 0 {
-		fmt.Println("the Json from request is: ", req)
+	if err := json.Unmarshal(body, &e); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			panic(err)
 		}
+		return
 	}
-	fmt.Println("the Json from request is: ", req)
 
-	emulator := emulators.allocate()
+	fmt.Println("the Json from request is: ", e)
 
-	//fmt.Println("the emulator before start is: ", emulator)
-
-	if emulator != nil {
-		emulator.id = req.Id
-		emulator.start()
-		//fmt.Println(emulator)
-		fmt.Println("Launch emulator successfully.")
-		res.Id = emulator.id
-		res.Port = emulator.port
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(res); err != nil {
-			panic(err)
-		}	
-	
-	} else {
-	
-		fmt.Println("Launch failure.")
+	if port, err = RepoAllocateEmulatorPort(); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			panic(err)
 		}
+		return
 	}
 
-	//fmt.Println("the emulator aftre start is: ", emulator)
+	e.init(port)
+	e.start()
 
-	emulators.showAll()
+	RepoCreateEmulator(e)
+
+	fmt.Println("Create emulator successfully: ", e.Cmd)
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+	if err := json.NewEncoder(w).Encode(e); err != nil {
+		panic(err)
+	}
+
 }
 
 
 // /emulators/{id} DELETE
 func EmulatorDestroy(w http.ResponseWriter, r *http.Request) {
-	
-	var req ApiStopEmulatorRequest
-	var res ApiStopEmulatorResponse
+	vars := mux.Vars(r)
+	var id int
+	var err error
 
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
-	if err != nil {
+	if id, err = strconv.Atoi(vars["id"]); err != nil {
 		panic(err)
 	}
-	if err := r.Body.Close(); err != nil {
-		panic(err)
-	}
-	fmt.Println("the head of request is: ", r.Header)
-	fmt.Println("the body of request is: ", string(body))
-	
-	if err := json.Unmarshal(body, &req); err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			panic(err)
-		}
-	}
 
-	fmt.Println("the json of request is: ", req)
-	
-	emulator := emulators.getEmulator(req.Id)
-	if emulator != nil {
-		emulator.stop()
-		res.Id = emulator.id
-		res.StartTime = emulator.startTime
-		res.StopTime = emulator.stopTime
-		emulator.init(emulator.port)
-		
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusCreated)
-		
-		if err := json.NewEncoder(w).Encode(res); err != nil {
-			panic(err)
-		}
+	if e,err := RepoFindEmulator(id); err == nil {
 
-	} else {
-		fmt.Println("can't find this emulator. d%", req.Id)
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			panic(err)
-		}
+		fmt.Println("Delete emulator successfully: ", e.Cmd)
+		e.stop()
+		RepoFreeEmulatorPort(e.Port)
+		RepoDestroyEmulator(id)
 	}
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
 
-	emulators.showAll()
+	return
 }
 
 // /emulators/{id} GET
 func EmulatorShow(w http.ResponseWriter, r *http.Request) {
-	
-	var res ApiShowEmulatorResponse
+
+	vars := mux.Vars(r)
+	var id int
 	var err error
+	var e Emulator
 
-	str := r.URL.Query().Get("id")
-	if str != "" { 
-	// request carries "id" parameter
-		emulatorId,_ := strconv.ParseUint(str, 10, 64)
-		fmt.Println("the emulator id in the request is: ", emulatorId)
-	
-		emulator := emulators.getEmulator(emulatorId)
-		if emulator != nil {
-			res.Id = emulator.id
-			res.Name = emulator.name
-			res.Port = emulator.port
-			res.StartTime = emulator.startTime
-			res.StopTime = emulator.stopTime
-		
-			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			w.WriteHeader(http.StatusOK)
-		
-			if err := json.NewEncoder(w).Encode(res); err != nil {
-				panic(err)
-			}	
-
-		} else {
-			fmt.Println("can't find this emulator. d%", emulatorId)
-			w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-			w.WriteHeader(422) // unprocessable entity
-			if err := json.NewEncoder(w).Encode(err); err != nil {
-				panic(err)
-			}
-		}
-	} else {
-	// no "id" para in the request from client
-
-		var ress []ApiShowEmulatorResponse
-		for _, e := range emulators.emulators {
-			if e.status == true {
-				res := ApiShowEmulatorResponse {e.id, 
-								e.name, 
-								e.port, 
-								e.startTime,
-								e.stopTime,
-								}
-				ress = append(ress, res)
-			}
-		}
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(ress); err != nil {
-			panic(err)
-		}
-
+	if id, err = strconv.Atoi(vars["id"]); err != nil {
+		panic(err)
 	}
 
-	emulators.showAll()
+	if e,err = RepoFindEmulator(id); err == nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+
+		if err := json.NewEncoder(w).Encode(e); err != nil {
+			panic(err)
+		}
+	}
+	return
 }
 
 

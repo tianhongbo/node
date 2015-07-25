@@ -12,59 +12,68 @@ import (
 
 // Initiate the repository data
 func init() {
-	//RepoCreateHub(Hub{Name: "SJSU_GUEST_WIFI"})
-	//RepoCreateHub(Hub{Name: "AT&T_LTE"})
+	//intialize free emulator port
+	for i := EMULATOR_MIN_PORT; i <= EMULATOR_MAX_PORT; i = i+2 {
+		freeEmulatorPorts = append(freeEmulatorPorts,i)
+	}
+
+	//intialize devices list
 	RepoCreateDeviceInventory(Device{IMEI:"353188020902632", ADBName:"G1002de5a082", VNCPort: 5900, SSHPort: 22, ConnectedHostname: THIS_HOST_NAME})
 	RepoCreateDeviceInventory(Device{IMEI:"353188020902633", ADBName:"G1002de5a083", VNCPort: 5901, SSHPort: 23, ConnectedHostname: THIS_HOST_NAME})
 	RepoCreateDeviceInventory(Device{IMEI:"353188020902634", ADBName:"G1002de5a084", VNCPort: 5902, SSHPort: 24, ConnectedHostname: THIS_HOST_NAME})
 }
 
 const THIS_HOST_NAME = "host101"
-//Emulators
 const EMULATOR_MIN_PORT = 5554
 const EMULATOR_MAX_PORT = 5584
-const EMULATOR_NUM = (EMULATOR_MAX_PORT-EMULATOR_MIN_PORT)/2
+const EMULATOR_MAX_NUM = (EMULATOR_MAX_PORT-EMULATOR_MIN_PORT)/2
 
-type Emulators struct {
-	emulators [EMULATOR_NUM]Emulator
+
+//Emulator free port #
+var freeEmulatorPorts FreeEmulatorPorts
+
+func RepoAllocateEmulatorPort() (int, error) {
+	for i,port := range freeEmulatorPorts {
+		freeEmulatorPorts = append(freeEmulatorPorts[:i], freeEmulatorPorts[i+1:]...)
+		return port, nil
+	}
+	return 0, errors.New("can't find the available emulator port resource.")
 }
 
+func RepoFreeEmulatorPort(port int) {
+	freeEmulatorPorts = append(freeEmulatorPorts, port)
+	return
+}
+
+//Emulators
 var emulators Emulators
 
-func (emus *Emulators) init() {
-	for i := 0; i < EMULATOR_NUM; i++ {
-		emus.emulators[i].init(uint16(EMULATOR_MIN_PORT + i*2)) 
-	}
-}
 
-func (emus *Emulators) allocate()  (*Emulator) {
-	for i := 0; i < EMULATOR_NUM; i++ {
-		if emus.emulators[i].status == false {
-			emus.emulators[i].status = true //set used flag "true"
-			//fmt.Println(i)
-			//fmt.Println(emus.emulators[i])
-			return &emus.emulators[i]
+
+func RepoFindEmulator(id int) (Emulator, error) {
+	for _, e := range emulators {
+		if e.Id == id {
+			return e, nil
 		}
 	}
-	return nil 
+
+	return Emulator{}, errors.New("can't find the emulator.")
+
 }
 
-func (emus *Emulators) showAll() {
-	for i, emu := range emus.emulators {
-		fmt.Println("the i = %d emulator: ", i, emu)
-	}
+func RepoCreateEmulator(e Emulator) Emulator {
+	emulators = append(emulators, e)
+	return e
 }
 
-
-func (emus *Emulators) getEmulator(id uint64)  (*Emulator) {
-	if id == 0 {return nil}
-	for i,_ := range emus.emulators {
-		if emus.emulators[i].id == id {
-			fmt.Println(emus.emulators[i])
-			return &emus.emulators[i]
+func RepoDestroyEmulator(id int) error {
+	for i, e := range emulators {
+		if e.Id == id {
+			emulators = append(emulators[:i], emulators[i+1:]...)
+			return nil
 		}
 	}
-	return nil
+	return errors.New("can't find the emulator.")
 }
 
 // Mobile hubs

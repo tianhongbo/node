@@ -10,87 +10,73 @@ import (
 	"bytes"
 )
 
+type FreeEmulatorPorts []int
+
 type Emulator struct {
-	id		uint64
-	name		string
-	status		bool	//true: used, false: idle
-	startTime	time.Time
-	stopTime	time.Time
-	cmd		*exec.Cmd
-	port		uint16 
+	Id			int 		`json:"id"`
+	Name		string 		`json:"name"`
+	ConnectedHostname string `json: "connected_hostname"`
+	VNCPort 	int 		`json: "vnc_port"`
+	SSHPort 	int 		`json: "ssh_port"`
+	ADBName 	string 		`json: "-"`
+	Port		int 		`json:"port"`
+	StartTime	time.Time	`json:"start_time"`
+	StopTime	time.Time 	`json:"stop_time"`
+	Cmd			*exec.Cmd 	`json:"-"`
 }
 
-type ApiStartEmulatorRequest struct {
-	Id	uint64	`json:"id"`
-	Name	string	`json:"name"`	
-}
+
+type Emulators []Emulator
+
 
 type ApiStartEmulatorResponse struct {
 	Id	uint64	`json:"id"`
-	Port	uint16	`json:"port"`
+	Port	int	`json:"port"`
 	
 }
 
-type ApiStopEmulatorRequest struct {
-	Id	uint64	`json:"id"`
-	
-}
-
-type ApiStopEmulatorResponse struct {
-	Id		uint64		`json:"id"`
-	StartTime	time.Time	`json:"starttime"`
-	StopTime	time.Time	`json:"stoptime"`
-}
-
-type ApiShowEmulatorRequest struct {
-	//Id	uint64	`json:"id"`
-	
-}
 
 type ApiShowEmulatorResponse struct {
-	Id		uint64		`json:"id"`
+	Id		int		`json:"id"`
 	Name		string		`json:"name"`
-	Port		uint16		`json:"port"`
+	Port		int		`json:"port"`
 	StartTime	time.Time	`json:"starttime"`
 	StopTime	time.Time	`json:"stoptime"`
 }
 
 
 func (emu *Emulator) start() {
-	err := emu.cmd.Start()
-	emu.startTime = time.Now()
-	fmt.Println("A emulator is successfully launched at port: ", err, emu.port) 
+	err := emu.Cmd.Start()
+	emu.StartTime = time.Now()
+	fmt.Println("A emulator is successfully launched at port: ", err, emu.Port)
 	
 }
 
 func (emu *Emulator) stop() {
-	emu.stopTime = time.Now()
-	err := emu.cmd.Process.Signal(os.Kill)
-	err = emu.cmd.Wait()
+	emu.StopTime = time.Now()
+	err := emu.Cmd.Process.Signal(os.Kill)
+	err = emu.Cmd.Wait()
 
 	fmt.Println("A emulator is successfully stopped. The result of cmd is: ", err) 
 }
 
-func (emu *Emulator) init(port uint16) {
-	emu.id = 0		//id		uint64
-	emu.name = ""		//name		string
-	emu.status = false	//status		bool	//true: used, false: idle
-	emu.startTime = time.Time{}	//startTime	time.Time
-	emu.stopTime = time.Time{}	//stopTime	time.Time
+func (emu *Emulator) init(port int) {
+	emu.StartTime = time.Now()	//startTime	time.Time
+	emu.StopTime = time.Time{}	//stopTime	time.Time
                 
-        emu.port = port
+	emu.Port = port
 
-        //init cmd emulator64-arm -avd myandroid -no-window -verbose -no-boot-anim -noskin
-        cmdStr := "emulator64-arm -avd android-api-22 -no-window -verbose -no-boot-anim -noskin -port " + strconv.Itoa(int(emu.port))
-        parts := strings.Fields(cmdStr)
-        head := parts[0]
-        parts = parts[1:len(parts)]
+	//init cmd emulator64-arm -avd myandroid -no-window -verbose -no-boot-anim -noskin
+	cmdStr := "emulator64-arm -avd android-api-22 -no-window -verbose -no-boot-anim -noskin -port " + strconv.Itoa(int(emu.Port))
+	parts := strings.Fields(cmdStr)
+	head := parts[0]
+	parts = parts[1:len(parts)]
         
 	//fmt.Println(head, parts)
-        emu.cmd = exec.Command(head, parts...)
-        randomBytes := &bytes.Buffer{}
-        emu.cmd.Stdout = randomBytes
+	emu.Cmd = exec.Command(head, parts...)
+	randomBytes := &bytes.Buffer{}
+	emu.Cmd.Stdout = randomBytes
 
-        fmt.Println(emu.cmd)
-        fmt.Println(emu)
+	fmt.Println(emu.Cmd)
+	fmt.Println(emu)
 }
