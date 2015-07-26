@@ -12,36 +12,101 @@ import (
 
 // Initiate the repository data
 func init() {
-	//intialize free emulator port
+	//intialize free VNC port pool
+	for i := VNC_MIN_PORT; i <= VNC_MAX_PORT; i++ {
+		freeVNCPortPool = append(freeVNCPortPool,i)
+	}
+	//intialize free SSH port pool
+	for i := SSH_MIN_PORT; i <= SSH_MAX_PORT; i++ {
+		freeSSHPortPool = append(freeSSHPortPool,i)
+	}
+	//intialize free emulator port pool
 	for i := EMULATOR_MIN_PORT; i <= EMULATOR_MAX_PORT; i = i+2 {
-		freeEmulatorPorts = append(freeEmulatorPorts,i)
+		freeEmulatorPortPool = append(freeEmulatorPortPool,i)
 	}
 
 	//intialize devices list
-	RepoCreateDeviceInventory(Device{IMEI:"353188020902632", ADBName:"G1002de5a082", VNCPort: 5900, SSHPort: 22, ConnectedHostname: THIS_HOST_NAME})
-	RepoCreateDeviceInventory(Device{IMEI:"353188020902633", ADBName:"G1002de5a083", VNCPort: 5901, SSHPort: 23, ConnectedHostname: THIS_HOST_NAME})
-	RepoCreateDeviceInventory(Device{IMEI:"353188020902634", ADBName:"G1002de5a084", VNCPort: 5902, SSHPort: 24, ConnectedHostname: THIS_HOST_NAME})
+	RepoCreateDeviceInventory(Device{IMEI:"353188020902632", ADBName:"G1002de5a082",  ConnectedHostname: THIS_HOST_NAME})
+	RepoCreateDeviceInventory(Device{IMEI:"353188020902633", ADBName:"G1002de5a083",  ConnectedHostname: THIS_HOST_NAME})
+	RepoCreateDeviceInventory(Device{IMEI:"353188020902634", ADBName:"G1002de5a084",  ConnectedHostname: THIS_HOST_NAME})
+	for i,_ := range inventories {
+		if sshPort, err := RepoAllocateSSHPort(); err == nil {
+			inventories[i].SSHPort = sshPort
+		} else {
+			panic(err)
+		}
+		if vncPort, err := RepoAllocateVNCPort(); err == nil {
+			inventories[i].VNCPort = vncPort
+		} else {
+			panic(err)
+		}
+
+	}
+
+	//fmt.Println(inventories)
+	//fmt.Println(freeVNCPortPool)
+	//fmt.Println(freeSSHPortPool)
+	//fmt.Println(freeEmulatorPortPool)
 }
 
 const THIS_HOST_NAME = "host101"
 const EMULATOR_MIN_PORT = 5554
 const EMULATOR_MAX_PORT = 5584
 const EMULATOR_MAX_NUM = (EMULATOR_MAX_PORT-EMULATOR_MIN_PORT)/2
+const VNC_MIN_PORT = 5901
+const VNC_MAX_PORT = 5920
+
+const SSH_MIN_PORT = 5921
+const SSH_MAX_PORT = 5940
+
+const INSTALL_SCRIPT_PATH  = "/Users/Scott/master/src/github.com/tianhongbo/node/"
+const INSTALL_DATA_PATH  = "/Users/Scott/master/src/github.com/tianhongbo/node/"
+//VNC available port pool#
+var freeVNCPortPool FreeVNCPortPool
+
+func RepoAllocateVNCPort() (int, error) {
+	for i,port := range freeVNCPortPool {
+		freeVNCPortPool = append(freeVNCPortPool[:i], freeVNCPortPool[i+1:]...)
+		return port, nil
+	}
+	return 0, errors.New("can't find the available emulator port resource.")
+}
+
+func RepoFreeVNCPort(port int) {
+	freeVNCPortPool = append(freeVNCPortPool, port)
+	return
+}
+
+//SSH available port pool#
+var freeSSHPortPool FreeSSHPortPool
+
+func RepoAllocateSSHPort() (int, error) {
+	for i,port := range freeSSHPortPool {
+		freeSSHPortPool = append(freeSSHPortPool[:i], freeSSHPortPool[i+1:]...)
+		return port, nil
+	}
+	return 0, errors.New("can't find the available emulator port resource.")
+}
+
+func RepoFreeSSHPort(port int) {
+	freeSSHPortPool = append(freeSSHPortPool, port)
+	return
+}
 
 
-//Emulator free port #
-var freeEmulatorPorts FreeEmulatorPorts
+//Emulator available port pool #
+var freeEmulatorPortPool FreeEmulatorPortPool
 
 func RepoAllocateEmulatorPort() (int, error) {
-	for i,port := range freeEmulatorPorts {
-		freeEmulatorPorts = append(freeEmulatorPorts[:i], freeEmulatorPorts[i+1:]...)
+	for i,port := range freeEmulatorPortPool {
+		freeEmulatorPortPool = append(freeEmulatorPortPool[:i], freeEmulatorPortPool[i+1:]...)
 		return port, nil
 	}
 	return 0, errors.New("can't find the available emulator port resource.")
 }
 
 func RepoFreeEmulatorPort(port int) {
-	freeEmulatorPorts = append(freeEmulatorPorts, port)
+	freeEmulatorPortPool = append(freeEmulatorPortPool, port)
 	return
 }
 

@@ -4,7 +4,7 @@ import "time"
 
 type AttachRsp struct {
 	ResourceType	string		`json:"resource_type"`
-	ResourceId	uint64		`json:"resource_id"`
+	ResourceId	int		`json:"resource_id"`
 	HubId		int		`json:"hub_id"`
 	Port		int		`json:"hub_port"`
 }
@@ -12,7 +12,7 @@ type AttachRsp struct {
 type Connection struct {
 	Port		int		`json:"port"`
 	ResourceType	string		`json:"resource_type"`
-	ResourceId	uint64		`json:"resource_id"`
+	ResourceId	int		`json:"resource_id"`
 
 }
 type Hub struct {

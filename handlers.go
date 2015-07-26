@@ -53,11 +53,9 @@ func EmulatorIndex(w http.ResponseWriter, r *http.Request) {
 
 // /emulators POST
 func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
-	var port int
+	var emulatorPort, sshPort, vncPort int
 	var e Emulator
 
-	//emulators.showAll()
-	
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
 		panic(err)
@@ -65,9 +63,6 @@ func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 	if err := r.Body.Close(); err != nil {
 		panic(err)
 	}
-	
-	fmt.Println("the body of request is: ", r.Header)
-	fmt.Println("the body of request is: ", string(body))
 
 	if err := json.Unmarshal(body, &e); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -78,9 +73,7 @@ func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Println("the Json from request is: ", e)
-
-	if port, err = RepoAllocateEmulatorPort(); err != nil {
+	if emulatorPort, err = RepoAllocateEmulatorPort(); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
@@ -88,13 +81,47 @@ func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
+	e.Port = emulatorPort
 
-	e.init(port)
+	//Assign ADB name according Android SDK naming convention "emulator-'port'". e.g. emulator-5554
+	e.ADBName = "emulator-" + strconv.Itoa(e.Port)
+
+	//Allocate SSH port
+	if sshPort, err = RepoAllocateSSHPort(); err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			panic(err)
+		}
+		return
+	}
+	e.SSHPort = sshPort
+
+	//Allocate VNC port
+	if vncPort, err = RepoAllocateVNCPort(); err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			panic(err)
+		}
+		return
+	}
+	e.VNCPort = vncPort
+
+
+	e.StartTime = time.Now()	//startTime	time.Time
+	e.StopTime = time.Time{}	//stopTime	time.Time
+
+	e.ConnectedHostname = THIS_HOST_NAME
+
+	e.initCmd()
 	e.start()
 
 	RepoCreateEmulator(e)
 
-	fmt.Println("Create emulator successfully: ", e.Cmd)
+
+
+	fmt.Println("Create emulator successfully: ", e)
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusOK)
@@ -289,6 +316,18 @@ func HubAttach(w http.ResponseWriter, r *http.Request) {
 
 		// manipulate the device network
 		fmt.Println("Turn on the intenet connection ")
+		switch connection.ResourceType {
+		case "emulator":
+			if e,err := RepoFindEmulator(connection.ResourceId); err == nil {
+				e.attach();
+			}
+			break;
+		case "device":
+			break;
+		default:
+			fmt.Println("The resource type is not support.", connection.ResourceType)
+			break;
+		}
 
 		// respond
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -346,6 +385,18 @@ func HubDetach(w http.ResponseWriter, r *http.Request) {
 
 		// manipulate the device network
 		fmt.Println("Turn off the intenet connection ")
+		switch connection.ResourceType {
+		case "emulator":
+			if e,err := RepoFindEmulator(connection.ResourceId); err == nil {
+				e.detach()
+			}
+			break;
+		case "device":
+			break;
+		default:
+			fmt.Println("The resource type is not support.", connection.ResourceType)
+			break;
+		}
 
 		// respond
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
