@@ -15,9 +15,9 @@ while [ "$A" != "1" ]; do
 done
 
 #connect Internet connection
-adb -s $adb_name shell svc data enable
-adb -s $adb_name shell svc wifi enable
-adb -s $adb_name shell setprop net.dns1 10.0.2.3
-
+#adb -s $adb_name shell svc data enable
+#adb -s $adb_name shell svc wifi enable
+#adb -s $adb_name shell setprop net.dns1 192.168.1.1
+adb -s $adb_name shell 'su -c "setprop net.dns1 8.8.8.8"'
 #Open browser and visit "www.sjsu.edu" website
 adb -s $adb_name shell am start -a android.intent.action.VIEW -d http://www.sjsu.edu

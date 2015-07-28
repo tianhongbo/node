@@ -1,3 +1,4 @@
+#!/usr/bin/env bash
 # 1.start ssh
  ssh -i /Users/hongbotian/Downloads/cloud.key -NL 5554:localhost:5554 -L 5555:localhost:5555 ubuntu@8.21.28.162 &
 # 2.adb devices

@@ -10,7 +10,7 @@ adb -s $adb_name wait-for-device
 #waiting for device booting
 A=$(adb -s $adb_name shell getprop sys.boot_completed | tr -d '\r')
 while [ "$A" != "1" ]; do
-        sleep 2
+        sleep 1
         A=$(adb -s $adb_name shell getprop sys.boot_completed | tr -d '\r')
 done
 

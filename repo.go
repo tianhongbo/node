@@ -7,6 +7,7 @@ import (
 	//"os/exec"
 	//"strconv"
 	"errors"
+	"time"
 )
 
 
@@ -26,22 +27,10 @@ func init() {
 	}
 
 	//intialize devices list
-	RepoCreateDeviceInventory(Device{IMEI:"353188020902632", ADBName:"G1002de5a082",  ConnectedHostname: THIS_HOST_NAME})
-	RepoCreateDeviceInventory(Device{IMEI:"353188020902633", ADBName:"G1002de5a083",  ConnectedHostname: THIS_HOST_NAME})
-	RepoCreateDeviceInventory(Device{IMEI:"353188020902634", ADBName:"G1002de5a084",  ConnectedHostname: THIS_HOST_NAME})
-	for i,_ := range inventories {
-		if sshPort, err := RepoAllocateSSHPort(); err == nil {
-			inventories[i].SSHPort = sshPort
-		} else {
-			panic(err)
-		}
-		if vncPort, err := RepoAllocateVNCPort(); err == nil {
-			inventories[i].VNCPort = vncPort
-		} else {
-			panic(err)
-		}
+	RepoCreateDevice(Device{IMEI:"357288042352104", Status:"available", ADBName:"4e640638", IP:"192.168.1.16", ConnectedHostname: THIS_HOST_NAME})
+	RepoCreateDevice(Device{IMEI:"353188020902633", Status:"available", ADBName:"G1002de5a083", IP:"192.168.1.17", ConnectedHostname: THIS_HOST_NAME})
+	RepoCreateDevice(Device{IMEI:"353188020902634", Status:"available", ADBName:"G1002de5a084", IP:"192.168.1.18", ConnectedHostname: THIS_HOST_NAME})
 
-	}
 
 	//fmt.Println(inventories)
 	//fmt.Println(freeVNCPortPool)
@@ -61,6 +50,7 @@ const SSH_MAX_PORT = 5940
 
 const INSTALL_SCRIPT_PATH  = "/Users/Scott/master/src/github.com/tianhongbo/node/"
 const INSTALL_DATA_PATH  = "/Users/Scott/master/src/github.com/tianhongbo/node/"
+
 //VNC available port pool#
 var freeVNCPortPool FreeVNCPortPool
 
@@ -113,8 +103,6 @@ func RepoFreeEmulatorPort(port int) {
 //Emulators
 var emulators Emulators
 
-
-
 func RepoFindEmulator(id int) (Emulator, error) {
 	for _, e := range emulators {
 		if e.Id == id {
@@ -143,7 +131,6 @@ func RepoDestroyEmulator(id int) error {
 
 // Mobile hubs
 var hubs Hubs
-
 
 func RepoFindHub(id int) (Hub,error) {
 	for _, t := range hubs {
@@ -234,59 +221,47 @@ func RepoDestroyDevice(imei string) error {
 			return nil
 		}
 	}
-	return fmt.Errorf("Could not find device with id of %d to destroy", imei)
+	return fmt.Errorf("Could not find device with IMEI of %d to destroy", imei)
 }
 
-/*
-The following are device inventories
- */
-
-var inventories Inventroies
-
-func RepoFindDeviceInventory(imei string) (Device,error) {
-	for _, d := range inventories {
-		if d.IMEI == imei {
-			return d, nil
-		}
-	}
-	// return empty Hub if not found
-	return Device{}, errors.New("can't find the device in the inventory.")
-}
-
-func RepoCreateDeviceInventory(d Device) Device {
-	inventories = append(inventories, d)
-	return d
-}
-
-func RepoDestroyDeviceInventory(imei string) error {
-	for i, d := range inventories {
-		if d.IMEI == imei {
-			inventories = append(inventories[:i], inventories[i+1:]...)
+func RepoAllocateDevice(device Device) (error) {
+	for i, d := range devices {
+		if d.IMEI == device.IMEI {
+			if d.Status != "available" {
+				fmt.Println("Warning! the device is not on available status when it is allocated.")
+			}
+			devices[i].Status = "occupied"
+			devices[i].Id = device.Id
+			devices[i].Name = device.Name
+			devices[i].SSHPort = device.SSHPort
+			devices[i].VNCPort = device.VNCPort
+			devices[i].StartTime = device.StartTime
+			devices[i].StopTime = device.StopTime
+			devices[i].initCmd()
+			fmt.Println("Device is allocated. IMEI = ", device.IMEI)
 			return nil
 		}
 	}
-	return fmt.Errorf("Could not find device in the inventory with id of %d to destroy", imei)
+	// return error if not found
+	return errors.New("can't find the device in the devices.")
 }
 
-func RepoAllocateDeviceInventory(imei string) (Device, error) {
-	for _, d := range inventories {
+func RepoFreeDevice(imei string) error {
+	for i, d := range devices {
 		if d.IMEI == imei {
-			fmt.Println("Device of IMEI is allocated.\n")
-			return d, nil
-		}
-	}
-	// return empty Hub if not found
-	return Device{}, errors.New("can't find the device in the inventory.")
-}
+			fmt.Println("Device is free. IMEI = ", imei)
+			devices[i].Status = "available"
+			devices[i].Id = 0
+			devices[i].Name = ""
+			devices[i].SSHPort = 0
+			devices[i].VNCPort = 0
+			devices[i].StartTime = time.Time{}
+			devices[i].StopTime = time.Time{}
 
-func RepoFreeDeviceInventory(imei string) error {
-	for _, d := range inventories {
-		if d.IMEI == imei {
-			fmt.Println("Device of IMEI is free.")
 			return nil
 
 		}
 	}
-	// return empty Hub if not found
-	return errors.New("can't find the device in the inventory.")
+	// return error if not found
+	return errors.New("can't find the device in the devices.")
 }

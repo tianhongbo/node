@@ -15,8 +15,6 @@ import (
 
 )
 
-
-
 func Index(w http.ResponseWriter, r *http.Request) {
 
 	cmdStr := "emulator -avd  Android_2.2 -no-window -verbose -no-boot-anim -noskin"
@@ -53,7 +51,6 @@ func EmulatorIndex(w http.ResponseWriter, r *http.Request) {
 
 // /emulators POST
 func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
-	var emulatorPort, sshPort, vncPort int
 	var e Emulator
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
@@ -73,7 +70,7 @@ func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if emulatorPort, err = RepoAllocateEmulatorPort(); err != nil {
+	if e.Port, err = RepoAllocateEmulatorPort(); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
@@ -81,13 +78,12 @@ func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	e.Port = emulatorPort
 
 	//Assign ADB name according Android SDK naming convention "emulator-'port'". e.g. emulator-5554
 	e.ADBName = "emulator-" + strconv.Itoa(e.Port)
 
 	//Allocate SSH port
-	if sshPort, err = RepoAllocateSSHPort(); err != nil {
+	if e.SSHPort, err = RepoAllocateSSHPort(); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
@@ -95,10 +91,9 @@ func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	e.SSHPort = sshPort
 
 	//Allocate VNC port
-	if vncPort, err = RepoAllocateVNCPort(); err != nil {
+	if e.VNCPort, err = RepoAllocateVNCPort(); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
@@ -106,8 +101,6 @@ func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 		}
 		return
 	}
-	e.VNCPort = vncPort
-
 
 	e.StartTime = time.Now()	//startTime	time.Time
 	e.StopTime = time.Time{}	//stopTime	time.Time
@@ -129,6 +122,7 @@ func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 		panic(err)
 	}
 
+	return
 }
 
 
@@ -392,6 +386,7 @@ func HubDetach(w http.ResponseWriter, r *http.Request) {
 			}
 			break;
 		case "device":
+
 			break;
 		default:
 			fmt.Println("The resource type is not support.", connection.ResourceType)
@@ -430,7 +425,7 @@ func DeviceIndex(w http.ResponseWriter, r *http.Request) {
 
 // /device POST
 func DeviceCreate(w http.ResponseWriter, r *http.Request) {
-	var d,inventory Device
+	var d Device
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
@@ -448,7 +443,8 @@ func DeviceCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if  inventory, err = RepoAllocateDeviceInventory(d.IMEI); err != nil {
+	// confirm the device is existing with IMEI
+	if  _, err = RepoFindDevice(d.IMEI); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusNotFound)
 		if err := json.NewEncoder(w).Encode(err); err != nil {
@@ -457,15 +453,38 @@ func DeviceCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	d.ADBName = inventory.ADBName
-	d.ConnectedHostname = inventory.ConnectedHostname
-	d.SSHPort = inventory.SSHPort
-	d.VNCPort = inventory.VNCPort
+	if d.SSHPort, err = RepoAllocateSSHPort(); err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			panic(err)
+		}
+		return
+
+	}
+
+	if d.VNCPort, err = RepoAllocateVNCPort(); err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			panic(err)
+		}
+		return
+
+	}
 
 	//Initialize the start time
 	d.StartTime = time.Now()
 
-	d = RepoCreateDevice(d)
+	//save to repository
+	RepoAllocateDevice(d)
+
+	d,_ = RepoFindDevice(d.IMEI)
+
+	// should be start() after find because some initialization is done inside "RepoAllocateDevice(d)"
+
+	d.start()
+
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(d); err != nil {
@@ -475,14 +494,13 @@ func DeviceCreate(w http.ResponseWriter, r *http.Request) {
 	return
 }
 
-// /devices/{imei} GET
+// /devices/{id} GET
 func DeviceShow(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	var imei string
-	var err error
-	if imei = vars["imei"]; imei == "" {
-		panic(err)
-	}
+
+	imei = vars["imei"]
+
 	if d,err := RepoFindDevice(imei); err == nil {
 		//Find the device
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -499,23 +517,25 @@ func DeviceShow(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-
 	return
 
 }
 
-// /devices/{imei}
+// /devices/{imei} DELETE
 func DeviceDelete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	var imei string
 	var err error
-	if imei = vars["imei"]; imei == "" {
-		panic(err)
-	}
-	if err = RepoDestroyDevice(imei); err == nil {
-		// Find the hub and deleted successfully
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(http.StatusOK)
+
+	imei = vars["imei"];
+
+	//Free resources alloacted to this device
+	if d, err := RepoFindDevice(imei); err == nil {
+
+		d.stop()
+
+		RepoFreeSSHPort(d.SSHPort)
+		RepoFreeVNCPort(d.VNCPort)
 
 	} else {
 		// If we didn't find it, 404
@@ -524,9 +544,23 @@ func DeviceDelete(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(jsonErr{Code: http.StatusNotFound, Text: "Not Found"}); err != nil {
 			panic(err)
 		}
-
+		return
 	}
 
+	//Free devcie
+	if err = RepoFreeDevice(imei); err == nil {
+
+		// Find the hub and deleted successfully
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusOK)
+	} else {
+		// If we didn't find it, 404
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(http.StatusNotFound)
+		if err := json.NewEncoder(w).Encode(jsonErr{Code: http.StatusNotFound, Text: "Not Found"}); err != nil {
+			panic(err)
+		}
+	}
 	return
 }
 
