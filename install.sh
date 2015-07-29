@@ -1,5 +1,5 @@
 #!/bin/bash
-
+#Please make sure two paths configuration
 vnc_server_path=/Users/Scott/master/src/github.com/tianhongbo/node
 novnc_path=/Users/Scott/noVNC
 
@@ -7,7 +7,15 @@ novnc_path=/Users/Scott/noVNC
 adb_name=$1
 vnc_port=$2
 ssh_port=$3
-echo "adb_name=$adb_name, vnc_port=$vnc_port, ssh_port=$ssh_port"
+emulator_port=$4
+
+echo "adb_name=$adb_name, vnc_port=$vnc_port, ssh_port=$ssh_port, emulator_port=$emulator_port"
+
+#Create AVD
+echo no | android -s create avd -n android-api-10-$emulator_port -t android-10 --abi default/armeabi
+
+#Start Emulator
+#emulator64-arm -avd android-api-10-$emulator_port -wipe-data -no-window -no-boot-anim -noskin -port $emulator_port&
 
 #waiting for device online
 adb -s $adb_name wait-for-device
@@ -20,7 +28,7 @@ while [ "$A" != "1" ]; do
 done
 
 #unlock emulator screen
-adb -s $adb_name shell input keyevent 82
+#adb -s $adb_name shell input keyevent 82
 
 #disconnect Internet connection
 adb -s $adb_name shell svc data disable

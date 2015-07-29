@@ -27,10 +27,14 @@ done
 
 #adb -s $adb_name shell setprop net.dns1 0.0.0.0
 adb -s $adb_name shell 'su -c "setprop net.dns1 0.0.0.0"'
+adb -s $adb_name shell 'su -c "setprop net.dns2 0.0.0.0"'
+
+#adb forward
+adb -s $adb_name forward tcp:$vnc_port tcp:5901
 
 #start vnc proxy on the host
 #/Users/Scott/noVNC/utils/launch.sh --listen 5910 --vnc 192.168.1.16:5901 --web /Users/Scott/noVNC
 cd $novnc_path
-$novnc_path/utils/launch.sh --listen $vnc_port --vnc $device_ip:5901 --web $novnc_path&
+$novnc_path/utils/launch.sh --listen $vnc_port --vnc localhost:$vnc_port --web $novnc_path&
 
 

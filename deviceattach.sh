@@ -19,5 +19,6 @@ done
 #adb -s $adb_name shell svc wifi enable
 #adb -s $adb_name shell setprop net.dns1 192.168.1.1
 adb -s $adb_name shell 'su -c "setprop net.dns1 8.8.8.8"'
+adb -s $adb_name shell 'su -c "setprop net.dns2 8.8.4.4"'
 #Open browser and visit "www.sjsu.edu" website
 adb -s $adb_name shell am start -a android.intent.action.VIEW -d http://www.sjsu.edu

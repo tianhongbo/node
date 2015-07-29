@@ -70,7 +70,7 @@ func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if e.Port, err = RepoAllocateEmulatorPort(); err != nil {
+	if e.EmulatorPort, err = RepoAllocateEmulatorPort(); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
@@ -80,7 +80,7 @@ func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//Assign ADB name according Android SDK naming convention "emulator-'port'". e.g. emulator-5554
-	e.ADBName = "emulator-" + strconv.Itoa(e.Port)
+	e.ADBName = "emulator-" + strconv.Itoa(e.EmulatorPort)
 
 	//Allocate SSH port
 	if e.SSHPort, err = RepoAllocateSSHPort(); err != nil {
@@ -138,9 +138,11 @@ func EmulatorDestroy(w http.ResponseWriter, r *http.Request) {
 
 	if e,err := RepoFindEmulator(id); err == nil {
 
-		fmt.Println("Delete emulator successfully: ", e.Cmd)
+		fmt.Println("Delete emulator successfully: ", e.CmdInit)
 		e.stop()
-		RepoFreeEmulatorPort(e.Port)
+		RepoFreeEmulatorPort(e.EmulatorPort)
+		RepoFreeSSHPort(e.SSHPort)
+		RepoFreeVNCPort(e.VNCPort)
 		RepoDestroyEmulator(id)
 	}
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -309,7 +311,7 @@ func HubAttach(w http.ResponseWriter, r *http.Request) {
 		// attach successfully
 
 		// manipulate the device network
-		fmt.Println("Turn on the intenet connection ")
+		fmt.Println("Turn on the Intenet connection ")
 		switch connection.ResourceType {
 		case "emulator":
 			if e,err := RepoFindEmulator(connection.ResourceId); err == nil {
@@ -317,6 +319,9 @@ func HubAttach(w http.ResponseWriter, r *http.Request) {
 			}
 			break;
 		case "device":
+			if e,err := RepoFindDeviceById(connection.ResourceId); err == nil {
+				e.attach();
+			}
 			break;
 		default:
 			fmt.Println("The resource type is not support.", connection.ResourceType)
@@ -378,7 +383,7 @@ func HubDetach(w http.ResponseWriter, r *http.Request) {
 		// Detach successfully
 
 		// manipulate the device network
-		fmt.Println("Turn off the intenet connection ")
+		fmt.Println("Turn off the Intenet connection ")
 		switch connection.ResourceType {
 		case "emulator":
 			if e,err := RepoFindEmulator(connection.ResourceId); err == nil {
@@ -386,7 +391,9 @@ func HubDetach(w http.ResponseWriter, r *http.Request) {
 			}
 			break;
 		case "device":
-
+			if e,err := RepoFindDeviceById(connection.ResourceId); err == nil {
+				e.detach()
+			}
 			break;
 		default:
 			fmt.Println("The resource type is not support.", connection.ResourceType)

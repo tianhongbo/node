@@ -91,8 +91,6 @@ func (d *Device) attach() {
 	randomBytes := &bytes.Buffer{}
 	cmd.Stdout = randomBytes
 	cmd.Run()
-	fmt.Println(randomBytes.Bytes())
-
 }
 
 func (d *Device) detach() {
@@ -105,5 +103,4 @@ func (d *Device) detach() {
 	randomBytes := &bytes.Buffer{}
 	cmd.Stdout = randomBytes
 	cmd.Run()
-	fmt.Println(randomBytes.Bytes())
 }

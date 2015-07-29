@@ -27,7 +27,7 @@ func init() {
 	}
 
 	//intialize devices list
-	RepoCreateDevice(Device{IMEI:"357288042352104", Status:"available", ADBName:"4e640638", IP:"192.168.1.16", ConnectedHostname: THIS_HOST_NAME})
+	RepoCreateDevice(Device{IMEI:"357288042352104", Status:"available", ADBName:"4e640638", IP:"10.189.146.231", ConnectedHostname: THIS_HOST_NAME})
 	RepoCreateDevice(Device{IMEI:"353188020902633", Status:"available", ADBName:"G1002de5a083", IP:"192.168.1.17", ConnectedHostname: THIS_HOST_NAME})
 	RepoCreateDevice(Device{IMEI:"353188020902634", Status:"available", ADBName:"G1002de5a084", IP:"192.168.1.18", ConnectedHostname: THIS_HOST_NAME})
 
@@ -198,6 +198,16 @@ The following are devices
  */
 
 var devices Devices
+
+func RepoFindDeviceById(id int) (Device,error) {
+	for _, d := range devices {
+		if d.Id == id {
+			return d, nil
+		}
+	}
+	// return empty Hub if not found
+	return Device{}, errors.New("can't find the device.")
+}
 
 func RepoFindDevice(imei string) (Device,error) {
 	for _, d := range devices {

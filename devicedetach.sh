@@ -17,5 +17,6 @@ done
 #disconnect Internet connection
 #adb -s $adb_name shell svc data disable
 #adb -s $adb_name shell svc wifi disable
-#adb -s $adb_name shell setprop net.dns1 0.0.0.0
+
 adb -s $adb_name shell 'su -c "setprop net.dns1 0.0.0.0"'
+adb -s $adb_name shell 'su -c "setprop net.dns2 0.0.0.0"'
