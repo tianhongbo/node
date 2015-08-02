@@ -15,8 +15,8 @@ while [ "$A" != "1" ]; do
 done
 
 #connect Internet connection
-adb -s $adb_name shell svc data enable
-adb -s $adb_name shell svc wifi enable
+#adb -s $adb_name shell svc data enable
+#adb -s $adb_name shell svc wifi enable
 adb -s $adb_name shell setprop net.dns1 10.0.2.3
 
 #Open browser and visit "www.sjsu.edu" website

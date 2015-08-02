@@ -26,7 +26,7 @@ import (
 type Device struct {
 	IMEI string `json: "imei"`
 	Id int    `json:"id"`
-	Status string    `json:"status"` //"available", "occupied"
+	Status string    `json:"status"` //"available": free, "processing": from create to completely boot, "running": VNC & SSH available
 	Name string	`json: "name"`
 	ConnectedHostname string `json: "connected_hostname"`
 	VNCPort int `json: "vnc_port"`

@@ -6,8 +6,7 @@ import (
 	"time"
 	"os/exec"
 	"strconv"
-
-	"bytes"
+	"os"
 )
 
 type FreeEmulatorPortPool []int
@@ -15,6 +14,7 @@ type FreeEmulatorPortPool []int
 type Emulator struct {
 	Id			int 		`json:"id"`
 	Name		string 		`json:"name"`
+	Status		string       `json:"status"` //"processing": from create to completely boot, "running": VNC & SSH available
 	ConnectedHostname string `json: "connected_hostname"`
 	VNCPort 	int 		`json: "vnc_port"`
 	SSHPort 	int 		`json: "ssh_port"`
@@ -23,6 +23,7 @@ type Emulator struct {
 	StartTime	time.Time	`json:"start_time"`
 	StopTime	time.Time 	`json:"stop_time"`
 	Cmd			*exec.Cmd 	`json:"-"`
+	CmdWaitBoot		*exec.Cmd 	`json:"-"`	//Initializing Script exectued after emulator start
 	CmdInit		*exec.Cmd 	`json:"-"`	//Initializing Script exectued after emulator start
 	CmdAttach		*exec.Cmd 	`json:"-"`	//Enable network connection Script
 	CmdDetach		*exec.Cmd 	`json:"-"`	//Disable network connection script
@@ -48,12 +49,45 @@ type ApiShowEmulatorResponse struct {
 }
 
 
-func (emu *Emulator) start() {
+func (emu *Emulator) startEmulator() {
 	emu.Cmd.Start()
+
+	fmt.Println("Start to create the emulator: ADB name = ", emu.ADBName)
+
+	if err := emu.Cmd.Wait(); err != nil {
+		fmt.Println("Emulator Cmd process is killed. Error code = ", err)
+	} else {
+		fmt.Println("Emulator Cmd process finished.")
+	}
+
+}
+
+func (emu *Emulator) startEmulatorWaitBoot() {
+	emu.CmdWaitBoot.Start()
+
+	fmt.Println("Start to wait the emulator booting: ADB name = ", emu.ADBName)
+
+	if err := emu.CmdWaitBoot.Wait(); err != nil {
+		fmt.Println("Emulator CmdWaitBoot process is killed. Error code = ", err)
+	} else {
+		fmt.Println("Emulator CmdWaitBoot process finished.")
+	}
+	//update emulator status from "processing" to "running"
+	RepoUpdateEmulatorStatus("running", emu.Id)
+
+
+}
+func (emu *Emulator) startInitEmulator() {
 	emu.CmdInit.Start()
 
-	fmt.Println("A emulator is successfully launched at port: ", emu.EmulatorPort)
-	
+	fmt.Println("Start to initialize the emulator: ADB name = ", emu.ADBName)
+
+	if err := emu.CmdInit.Wait(); err != nil {
+		fmt.Println("Emulator Cmd Init process is killed. Error code = ", err)
+	} else {
+		fmt.Println("Emulator Cmd Init process finished.")
+	}
+
 }
 
 func (emu *Emulator) stop() {
@@ -65,19 +99,30 @@ func (emu *Emulator) stop() {
 	//err = emu.Cmd.Wait()
 	//fmt.Println(emu.Cmd.Stdout)
 
-	err = emu.Cmd.Process.Kill()
-	emu.Cmd.Wait()
+	if err = emu.Cmd.Process.Signal(os.Kill); err != nil {
+		fmt.Println("Warning! Kill Emulator Cmd process faild. Error code = ", err)
+	} else {
+		fmt.Println("Emulator Cmd process is being killed... ID = ", emu.Id)
+	}
+
+	if err = emu.CmdWaitBoot.Process.Signal(os.Kill); err != nil {
+		fmt.Println("Warning! Kill Emulator CmdWaitBoot process faild. Error code = ", err)
+	} else {
+		fmt.Println("Emulator CmdWaitBoot process is being killed... ID = ", emu.Id)
+	}
 
 
-	emu.CmdInit.Process.Kill()
-
-	err = emu.CmdInit.Wait()
+	//Here os.Interrupt is necessary because CmdInit need to clean up before exit
+	if err = emu.CmdInit.Process.Signal(os.Interrupt); err != nil {
+		fmt.Println("Warning! Kill Emulator Cmd Init process faild. Error code = ", err)
+	} else {
+		fmt.Println("Emulator CMD Init process is being killed... ID = ", emu.Id)
+	}
 
 //	fmt.Println(emu.CmdInit.Stdout)
 	//err = syscall.Kill(emu.CmdInit.Process.Pid, 9)
 
 
-	fmt.Println("A emulator is successfully stopped.", err)
 }
 
 func (emu *Emulator) initCmd() {
@@ -89,19 +134,24 @@ func (emu *Emulator) initCmd() {
 	head := parts[0]
 	parts = parts[1:len(parts)]
 	emu.Cmd = exec.Command(head, parts...)
-	randomBytes := &bytes.Buffer{}
-	emu.Cmd.Stdout = randomBytes
+	//randomBytes := &bytes.Buffer{}
+	//emu.Cmd.Stdout = randomBytes
 
-	//init cmd install.sh emulator-5566 vnc_port ssh_port
-	cmdStr2 := INSTALL_SCRIPT_PATH + "install.sh " + emu.ADBName + " " + strconv.Itoa(emu.VNCPort) + " " + strconv.Itoa(emu.SSHPort) + " " + strconv.Itoa(emu.EmulatorPort)
+	//init cmd emulatorwaitboot.sh emulator-5566
+	cmdStr2 := INSTALL_SCRIPT_PATH + "emulatorwaitboot.sh " + emu.ADBName
 
 	parts2 := strings.Fields(cmdStr2)
 	head2 := parts2[0]
 	parts2 = parts2[1:len(parts2)]
-	emu.CmdInit = exec.Command(head2, parts2...)
+	emu.CmdWaitBoot = exec.Command(head2, parts2...)
 
-	randomBytes2 := &bytes.Buffer{}
-	emu.CmdInit.Stdout = randomBytes2
+	//init cmd install.sh emulator-5566 vnc_port ssh_port
+	cmdStr3 := INSTALL_SCRIPT_PATH + "install.sh " + emu.ADBName + " " + strconv.Itoa(emu.VNCPort) + " " + strconv.Itoa(emu.SSHPort) + " " + strconv.Itoa(emu.EmulatorPort)
+
+	parts3 := strings.Fields(cmdStr3)
+	head3 := parts3[0]
+	parts3 = parts3[1:len(parts3)]
+	emu.CmdInit = exec.Command(head3, parts3...)
 
 }
 

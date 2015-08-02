@@ -29,7 +29,10 @@ done
 adb -s $adb_name shell 'su -c "setprop net.dns1 0.0.0.0"'
 adb -s $adb_name shell 'su -c "setprop net.dns2 0.0.0.0"'
 
-#adb forward
+#configure SSH
+adb -s $adb_name forward tcp:$ssh_port tcp:22
+
+#configure VNC
 adb -s $adb_name forward tcp:$vnc_port tcp:5901
 
 #start vnc proxy on the host

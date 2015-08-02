@@ -28,8 +28,8 @@ func init() {
 
 	//intialize devices list
 	RepoCreateDevice(Device{IMEI:"357288042352104", Status:"available", ADBName:"4e640638", IP:"10.189.146.231", ConnectedHostname: THIS_HOST_NAME})
-	RepoCreateDevice(Device{IMEI:"353188020902633", Status:"available", ADBName:"G1002de5a083", IP:"192.168.1.17", ConnectedHostname: THIS_HOST_NAME})
-	RepoCreateDevice(Device{IMEI:"353188020902634", Status:"available", ADBName:"G1002de5a084", IP:"192.168.1.18", ConnectedHostname: THIS_HOST_NAME})
+	//RepoCreateDevice(Device{IMEI:"353188020902633", Status:"available", ADBName:"G1002de5a083", IP:"192.168.1.17", ConnectedHostname: THIS_HOST_NAME})
+	//RepoCreateDevice(Device{IMEI:"353188020902634", Status:"available", ADBName:"G1002de5a084", IP:"192.168.1.18", ConnectedHostname: THIS_HOST_NAME})
 
 
 	//fmt.Println(inventories)
@@ -117,6 +117,16 @@ func RepoFindEmulator(id int) (Emulator, error) {
 func RepoCreateEmulator(e Emulator) Emulator {
 	emulators = append(emulators, e)
 	return e
+}
+
+func RepoUpdateEmulatorStatus(s string, id int) Emulator {
+	for i, e := range emulators {
+		if e.Id == id {
+			emulators[i].Status = s
+			return e
+		}
+	}
+	return Emulator{}
 }
 
 func RepoDestroyEmulator(id int) error {
@@ -240,7 +250,7 @@ func RepoAllocateDevice(device Device) (error) {
 			if d.Status != "available" {
 				fmt.Println("Warning! the device is not on available status when it is allocated.")
 			}
-			devices[i].Status = "occupied"
+			devices[i].Status = "running"
 			devices[i].Id = device.Id
 			devices[i].Name = device.Name
 			devices[i].SSHPort = device.SSHPort

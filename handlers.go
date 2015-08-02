@@ -67,6 +67,7 @@ func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			panic(err)
 		}
+		fmt.Println("Error! Can't unmarshal Json from create emulator request.", body)
 		return
 	}
 
@@ -76,6 +77,8 @@ func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			panic(err)
 		}
+		fmt.Println("Error! Can't allocate Emulator port for create emulator request.")
+
 		return
 	}
 
@@ -89,6 +92,7 @@ func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			panic(err)
 		}
+		fmt.Println("Error! Can't allocate SSH port for create emulator request.")
 		return
 	}
 
@@ -99,6 +103,7 @@ func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			panic(err)
 		}
+		fmt.Println("Error! Can't allocate VNC port for create emulator request.")
 		return
 	}
 
@@ -106,18 +111,19 @@ func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 	e.StopTime = time.Time{}	//stopTime	time.Time
 
 	e.ConnectedHostname = THIS_HOST_NAME
+	e.Status = "processing"
 
 	e.initCmd()
-	e.start()
+	go e.startEmulator()
+	go e.startEmulatorWaitBoot()
+	go e.startInitEmulator()
 
 	RepoCreateEmulator(e)
 
-
-
-	fmt.Println("Create emulator successfully: ", e)
+	fmt.Println("Emulator was created successfully. ID = ", e.Id)
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
+	w.WriteHeader(http.StatusCreated)
 	if err := json.NewEncoder(w).Encode(e); err != nil {
 		panic(err)
 	}
@@ -447,6 +453,7 @@ func DeviceCreate(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			panic(err)
 		}
+		fmt.Println("Error! Can't unmarshal JSON data from create device request.")
 		return
 	}
 
@@ -457,6 +464,7 @@ func DeviceCreate(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			panic(err)
 		}
+		fmt.Println("Error! Can't find the device for create device request. IMEI = ", d.IMEI)
 		return
 	}
 
@@ -466,6 +474,7 @@ func DeviceCreate(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			panic(err)
 		}
+		fmt.Println("Error! Can't allocate SSH port resource for create device request. IMEI = ", d.IMEI)
 		return
 
 	}
@@ -476,6 +485,7 @@ func DeviceCreate(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			panic(err)
 		}
+		fmt.Println("Error! Can't allocate VNC port resource for create device request. IMEI = ", d.IMEI)
 		return
 
 	}
