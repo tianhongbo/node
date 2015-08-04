@@ -103,7 +103,7 @@ func RepoFreeEmulatorPort(port int) {
 //Emulators
 var emulators Emulators
 
-func RepoFindEmulator(id int) (Emulator, error) {
+func RepoFindEmulator(id string) (Emulator, error) {
 	for _, e := range emulators {
 		if e.Id == id {
 			return e, nil
@@ -119,7 +119,7 @@ func RepoCreateEmulator(e Emulator) Emulator {
 	return e
 }
 
-func RepoUpdateEmulatorStatus(s string, id int) Emulator {
+func RepoUpdateEmulatorStatus(s string, id string) Emulator {
 	for i, e := range emulators {
 		if e.Id == id {
 			emulators[i].Status = s
@@ -129,7 +129,7 @@ func RepoUpdateEmulatorStatus(s string, id int) Emulator {
 	return Emulator{}
 }
 
-func RepoDestroyEmulator(id int) error {
+func RepoDestroyEmulator(id string) error {
 	for i, e := range emulators {
 		if e.Id == id {
 			emulators = append(emulators[:i], emulators[i+1:]...)
@@ -142,7 +142,7 @@ func RepoDestroyEmulator(id int) error {
 // Mobile hubs
 var hubs Hubs
 
-func RepoFindHub(id int) (Hub,error) {
+func RepoFindHub(id string) (Hub,error) {
 	for _, t := range hubs {
 		if t.Id == id {
 			return t, nil
@@ -157,7 +157,7 @@ func RepoCreateHub(t Hub) Hub {
 	return t
 }
 
-func RepoDestroyHub(id int) error {
+func RepoDestroyHub(id string) error {
 	for i, t := range hubs {
 		if t.Id == id {
 			hubs = append(hubs[:i], hubs[i+1:]...)
@@ -167,11 +167,11 @@ func RepoDestroyHub(id int) error {
 	return fmt.Errorf("Could not find Hub with id of %d to delete", id)
 }
 
-func RepoAttachHub(id int, connection Connection) (int, error) {
+func RepoAttachHub(id string, connection Connection) (int, error) {
 	for i, t := range hubs {
 		if t.Id == id {
 			for j, c := range hubs[i].Connections {
-				if c.ResourceId == 0 && c.ResourceType == "" {
+				if c.ResourceId == "" && c.ResourceType == "" {
 					hubs[i].Connections[j].ResourceId = connection.ResourceId
 					hubs[i].Connections[j].ResourceType = connection.ResourceType
 					return c.Port, nil
@@ -185,12 +185,12 @@ func RepoAttachHub(id int, connection Connection) (int, error) {
 	return 0, fmt.Errorf("Could not find Hub with id of %d to attach", id)
 }
 
-func RepoDetachHub(id int, connection Connection) error {
+func RepoDetachHub(id string, connection Connection) error {
 	for i, t := range hubs {
 		if t.Id == id {
 			for j, c := range hubs[i].Connections {
 				if c.ResourceId == connection.ResourceId && c.ResourceType == connection.ResourceType {
-					hubs[i].Connections[j].ResourceId = 0
+					hubs[i].Connections[j].ResourceId = ""
 					hubs[i].Connections[j].ResourceType = ""
 					return nil
 				}
@@ -209,7 +209,7 @@ The following are devices
 
 var devices Devices
 
-func RepoFindDeviceById(id int) (Device,error) {
+func RepoFindDeviceById(id string) (Device,error) {
 	for _, d := range devices {
 		if d.Id == id {
 			return d, nil
@@ -271,7 +271,7 @@ func RepoFreeDevice(imei string) error {
 		if d.IMEI == imei {
 			fmt.Println("Device is free. IMEI = ", imei)
 			devices[i].Status = "available"
-			devices[i].Id = 0
+			devices[i].Id = ""
 			devices[i].Name = ""
 			devices[i].SSHPort = 0
 			devices[i].VNCPort = 0

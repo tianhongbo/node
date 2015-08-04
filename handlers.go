@@ -135,12 +135,9 @@ func EmulatorCreate(w http.ResponseWriter, r *http.Request) {
 // /emulators/{id} DELETE
 func EmulatorDestroy(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	var id int
-	var err error
+	var id string
 
-	if id, err = strconv.Atoi(vars["id"]); err != nil {
-		panic(err)
-	}
+	id = vars["id"]
 
 	if e,err := RepoFindEmulator(id); err == nil {
 
@@ -161,13 +158,11 @@ func EmulatorDestroy(w http.ResponseWriter, r *http.Request) {
 func EmulatorShow(w http.ResponseWriter, r *http.Request) {
 
 	vars := mux.Vars(r)
-	var id int
+	var id string
 	var err error
 	var e Emulator
 
-	if id, err = strconv.Atoi(vars["id"]); err != nil {
-		panic(err)
-	}
+	id = vars["id"]
 
 	if e,err = RepoFindEmulator(id); err == nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -191,11 +186,11 @@ func HubIndex(w http.ResponseWriter, r *http.Request) {
 
 func HubShow(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	var hubId int
+	var hubId string
 	var err error
-	if hubId, err = strconv.Atoi(vars["id"]); err != nil {
-		panic(err)
-	}
+
+	hubId = vars["id"]
+
 	hub,err := RepoFindHub(hubId)
 
 	if err == nil {
@@ -221,11 +216,10 @@ func HubShow(w http.ResponseWriter, r *http.Request) {
 
 func HubDelete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	var hubId int
+	var hubId string
 	var err error
-	if hubId, err = strconv.Atoi(vars["id"]); err != nil {
-		panic(err)
-	}
+
+	hubId = vars["id"]
 	err = RepoDestroyHub(hubId)
 	if err == nil {
 		// Find the hub and deleted successfully
@@ -272,7 +266,7 @@ func HubCreate(w http.ResponseWriter, r *http.Request) {
 	//Initialize the connections
 
 	for i := 0; i < hub.PortNum; i++ {
-		hub.Connections = append(hub.Connections, Connection{i, "", 0})
+		hub.Connections = append(hub.Connections, Connection{i, "", ""})
 	}
 	//Initialize the start time
 	hub.StartTime = time.Now()
@@ -288,13 +282,11 @@ func HubCreate(w http.ResponseWriter, r *http.Request) {
 
 func HubAttach(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	var hubId int
+	var hubId string
 	var connection Connection
 	var err error
 
-	if hubId, err = strconv.Atoi(vars["id"]); err != nil {
-		panic(err)
-	}
+	hubId = vars["id"]
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 	if err != nil {
@@ -358,14 +350,12 @@ func HubAttach(w http.ResponseWriter, r *http.Request) {
 
 func HubDetach(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	var hubId int
+	var hubId string
 	var err error
 
 	connection := Connection{}
 
-	if hubId, err = strconv.Atoi(vars["id"]); err != nil {
-		panic(err)
-	}
+	hubId = vars["id"]
 
 
 	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))

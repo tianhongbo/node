@@ -12,7 +12,7 @@ import (
 type FreeEmulatorPortPool []int
 
 type Emulator struct {
-	Id			int 		`json:"id"`
+	Id			string 		`json:"id"`
 	Name		string 		`json:"name"`
 	Status		string       `json:"status"` //"processing": from create to completely boot, "running": VNC & SSH available
 	ConnectedHostname string `json: "connected_hostname"`
@@ -41,7 +41,7 @@ type ApiStartEmulatorResponse struct {
 
 
 type ApiShowEmulatorResponse struct {
-	Id		int		`json:"id"`
+	Id		string		`json:"id"`
 	Name		string		`json:"name"`
 	Port		int		`json:"port"`
 	StartTime	time.Time	`json:"starttime"`
@@ -129,7 +129,8 @@ func (emu *Emulator) initCmd() {
 
 
 	//init cmd emulator64-arm -avd myandroid -no-window -verbose -no-boot-anim -noskin
-	cmdStr := "emulator64-arm -avd android-api-10-"+strconv.Itoa(int(emu.EmulatorPort))+" -wipe-data -no-window -no-boot-anim -noskin -port " + strconv.Itoa(int(emu.EmulatorPort))
+	//cmdStr := "emulator64-arm -avd android-api-10-"+strconv.Itoa(int(emu.EmulatorPort))+" -wipe-data -no-window -no-boot-anim -noskin -port " + strconv.Itoa(int(emu.EmulatorPort))
+	cmdStr := "emulator64-arm -avd android-api-10-"+strconv.Itoa(int(emu.EmulatorPort))+" -wipe-data -no-window -port " + strconv.Itoa(int(emu.EmulatorPort))
 	parts := strings.Fields(cmdStr)
 	head := parts[0]
 	parts = parts[1:len(parts)]

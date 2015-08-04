@@ -4,6 +4,7 @@ trap 'echo "Exit 2(os.Interrupt signal detected... vncserver_id=$vncserver_pid, 
 
 #Please make sure two paths configuration
 vnc_server_path=/Users/Scott/master/src/github.com/tianhongbo/node
+ssh_server_path=/Users/Scott/master/src/github.com/tianhongbo/node
 novnc_path=/Users/Scott/noVNC
 
 # ADB name, vnc_port, ssh_port
@@ -39,7 +40,21 @@ done
 adb -s $adb_name shell setprop net.dns1 0.0.0.0
 
 #configure for SSH
-adb -s $adb_name forward tcp:$ssh_port tcp:22
+adb -s $adb_name install -r $ssh_server_path/android-sshd-0.0.1.apk
+adb -s $adb_name shell am start -a android.intent.action.MAIN -n org.stepinto.asshd/com.github.stepinto.asshd.MainActivity
+
+#simulate mouse click to start ssh server
+adb -s $adb_name shell sendevent /dev/input/event0 3 0 80
+adb -s $adb_name shell sendevent /dev/input/event0 3 1 100
+adb -s $adb_name shell sendevent /dev/input/event0 1 330 1
+adb -s $adb_name shell sendevent /dev/input/event0 0 0 0
+adb -s $adb_name shell sendevent /dev/input/event0 1 330 0
+adb -s $adb_name shell sendevent /dev/input/event0 0 0 0
+
+adb -s $adb_name forward tcp:$ssh_port tcp:8022
+
+#set screen to HOME
+adb -s $adb_name shell input keyevent 3
 
 #install, start vnc server service on the emulator
 adb -s $adb_name push $vnc_server_path/androidvncserver /data/
