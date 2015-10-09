@@ -5,15 +5,21 @@ Step 1: Install Android SDK
 
 Step 2: Install GO
 
-Step 3: Install noVNC
+Step 3: Install adb (even though it has been installed together with Android SDK/Studio)
+$ sudo apt-get install android-tools-adb
+
+Step 4: Install noVNC
 $ sudo git clone git://github.com/kanaka/noVNC
 
-Step 4: Git Clone NODE source code
+Step 5: Git Clone NODE source code
 $ git clone https://github.com/tianhongbo/node.git
 
-Step 5: Modify source code
+Step 6: Modify source code
 - install.sh
 - deviceinstall.sh
+- repo.go
+
+Done
 
 1. /etc/environment
 1)add emulator and node bin to PATH

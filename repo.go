@@ -48,8 +48,17 @@ const VNC_MAX_PORT = 5920
 const SSH_MIN_PORT = 5921
 const SSH_MAX_PORT = 5940
 
+/*
+ * For Mac Only
 const INSTALL_SCRIPT_PATH  = "/Users/Scott/master/src/github.com/tianhongbo/node/"
 const INSTALL_DATA_PATH  = "/Users/Scott/master/src/github.com/tianhongbo/node/"
+*/
+
+/*
+ * For Ubuntu only
+ */
+const INSTALL_SCRIPT_PATH  = "/home/ubuntu2/controller/src/github.com/tianhongbo/node/"
+const INSTALL_DATA_PATH  = "/home/ubuntu2/controller/src/github.com/tianhongbo/node/"
 
 //VNC available port pool#
 var freeVNCPortPool FreeVNCPortPool
