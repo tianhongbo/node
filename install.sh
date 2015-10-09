@@ -3,9 +3,15 @@
 trap 'echo "Exit 2(os.Interrupt signal detected... vncserver_id=$vncserver_pid, novnc_pid=$novnc_pid"; kill -9 $vncserver_pid; kill -9 $novnc_pid; exit 0' 2
 
 #Please make sure two paths configuration
-vnc_server_path=/Users/Scott/master/src/github.com/tianhongbo/node
-ssh_server_path=/Users/Scott/master/src/github.com/tianhongbo/node
-novnc_path=/Users/Scott/noVNC
+# For Mac
+#vnc_server_path=/Users/Scott/master/src/github.com/tianhongbo/node
+#ssh_server_path=/Users/Scott/master/src/github.com/tianhongbo/node
+#novnc_path=/Users/Scott/noVNC
+
+# For Ubutun
+vnc_server_path=/home/ubuntu2/controller/src/github.com/tianhongbo/node
+ssh_server_path=/home/ubuntu2/controller/src/github.com/tianhongbo/node
+novnc_path=/home/ubuntu2/controller/noVNC
 
 # ADB name, vnc_port, ssh_port
 adb_name=$1

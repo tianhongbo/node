@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"strconv"
 	"os"
+	"bytes"
 )
 
 type FreeEmulatorPortPool []int
@@ -135,8 +136,8 @@ func (emu *Emulator) initCmd() {
 	head := parts[0]
 	parts = parts[1:len(parts)]
 	emu.Cmd = exec.Command(head, parts...)
-	//randomBytes := &bytes.Buffer{}
-	//emu.Cmd.Stdout = randomBytes
+	randomBytes := &bytes.Buffer{}
+	emu.Cmd.Stdout = randomBytes
 
 	//init cmd emulatorwaitboot.sh emulator-5566
 	cmdStr2 := INSTALL_SCRIPT_PATH + "emulatorwaitboot.sh " + emu.ADBName

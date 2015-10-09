@@ -63,7 +63,9 @@ func RepoAllocateVNCPort() (int, error) {
 }
 
 func RepoFreeVNCPort(port int) {
-	freeVNCPortPool = append(freeVNCPortPool, port)
+	if (port >= VNC_MIN_PORT && port <= VNC_MAX_PORT) {
+		freeVNCPortPool = append(freeVNCPortPool, port)
+	}
 	return
 }
 
@@ -79,7 +81,9 @@ func RepoAllocateSSHPort() (int, error) {
 }
 
 func RepoFreeSSHPort(port int) {
-	freeSSHPortPool = append(freeSSHPortPool, port)
+	if (port >= SSH_MIN_PORT && port <= SSH_MAX_PORT) {
+		freeSSHPortPool = append(freeSSHPortPool, port)
+	}
 	return
 }
 
@@ -96,7 +100,9 @@ func RepoAllocateEmulatorPort() (int, error) {
 }
 
 func RepoFreeEmulatorPort(port int) {
-	freeEmulatorPortPool = append(freeEmulatorPortPool, port)
+	if (port >= EMULATOR_MIN_PORT && port <= EMULATOR_MAX_PORT) {
+		freeEmulatorPortPool = append(freeEmulatorPortPool, port)
+	}
 	return
 }
 

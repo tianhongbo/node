@@ -63,7 +63,7 @@ func (d *Device) stop() {
 	//err = syscall.Kill(d.CmdInit.Process.Pid, 9)
 
 
-	fmt.Println("A emulator is successfully stopped.", err)
+	fmt.Println("A device is successfully stopped.", err)
 }
 
 func (d *Device) initCmd() {

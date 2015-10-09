@@ -533,18 +533,12 @@ func DeviceDelete(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	var imei string
 	var err error
+	var d Device
 
 	imei = vars["imei"];
 
 	//Free resources alloacted to this device
-	if d, err := RepoFindDevice(imei); err == nil {
-
-		d.stop()
-
-		RepoFreeSSHPort(d.SSHPort)
-		RepoFreeVNCPort(d.VNCPort)
-
-	} else {
+	if d, err = RepoFindDevice(imei); err != nil {
 		// If we didn't find it, 404
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusNotFound)
@@ -554,20 +548,36 @@ func DeviceDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//Free devcie
-	if err = RepoFreeDevice(imei); err == nil {
-
-		// Find the hub and deleted successfully
+	if d.Status == "available" {
+		// Find the device, but it is in free status
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusOK)
-	} else {
-		// If we didn't find it, 404
+
+		return
+	}
+
+	//Free resources
+	RepoFreeSSHPort(d.SSHPort)
+	RepoFreeVNCPort(d.VNCPort)
+
+	//stop commands
+	d.stop()
+
+	//Free devcie
+	if err = RepoFreeDevice(imei); err != nil {
+		// if it is failed to free the device, then return "404"
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(http.StatusNotFound)
 		if err := json.NewEncoder(w).Encode(jsonErr{Code: http.StatusNotFound, Text: "Not Found"}); err != nil {
 			panic(err)
 		}
+		return
 	}
+
+	// device is deleted successfully
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	w.WriteHeader(http.StatusOK)
+
 	return
 }
 

@@ -1,7 +1,12 @@
 #!/bin/bash
 
-vnc_server_path=/Users/Scott/master/src/github.com/tianhongbo/node
-novnc_path=/Users/Scott/noVNC
+# For Mac
+#vnc_server_path=/Users/Scott/master/src/github.com/tianhongbo/node
+#novnc_path=/Users/Scott/noVNC
+
+For Ubuntu
+vnc_server_path=/home/ubuntu2/controller/src/github.com/tianhongbo/node
+novnc_path=/home/ubuntu2/controller/noVNC
 
 # ADB name, device_ip, vnc_port, ssh_port
 adb_name=$1
