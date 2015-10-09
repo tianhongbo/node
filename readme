@@ -2,6 +2,7 @@ How to configure? Please follow this prcedure:
 Step 1: Install Android SDK
 - install Java SDK
 - install Android Studio
+- install Android 2.3.3(API 10)
 
 Step 2: Install GO
 
@@ -19,16 +20,17 @@ Step 6: Modify source code
 - deviceinstall.sh
 - repo.go
 
-Done
+Step 7: Set environment variables
+$ sudo vi /etc/environment
 
-1. /etc/environment
-1)add emulator and node bin to PATH
-/home/ubuntu/android-sdk-linux/tools
-/home/ubuntu/node/bin
+- add emulator tools to PATH
+/home/ubuntu2/Android/Sdk/tools
 
-2)add GOPATH
-$ export GOPATH=~/controller
-e.g. /home/ubuntu2/controller
+- add GOPATH
+GOPATH=/home/ubuntu2/controller
+
+
+#Done
 
 2. /etc/rc.local
 start node automatically when instance booting
