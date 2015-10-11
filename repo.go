@@ -50,7 +50,7 @@ const VNC_MAX_PORT = 5920
 //For localhost ADB mapping
 //To avoid the conflict with external use VNC port
 const VNC_INTERNAL_MIN_PORT = 5941
-const VNC_INTERNAL_MIN_PORT = 5960
+const VNC_INTERNAL_MAX_PORT = 5960
 
 const SSH_MIN_PORT = 5921
 const SSH_MAX_PORT = 5940
