@@ -16,7 +16,7 @@ novnc_path=/home/ubuntu2/noVNC
 # ADB name, vnc_port, ssh_port
 adb_name=$1
 vnc_port=$2
-vnc_internal_port='expr $vnc_port + 40'
+vnc_internal_port=`expr $vnc_port + 20`
 ssh_port=$3
 emulator_port=$4
 
