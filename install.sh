@@ -16,6 +16,7 @@ novnc_path=/home/ubuntu2/noVNC
 # ADB name, vnc_port, ssh_port
 adb_name=$1
 vnc_port=$2
+vnc_internal_port='expr $vnc_port + 40'
 ssh_port=$3
 emulator_port=$4
 
@@ -65,12 +66,12 @@ adb -s $adb_name shell input keyevent 3
 #install, start vnc server service on the emulator
 adb -s $adb_name push $vnc_server_path/androidvncserver /data/
 adb -s $adb_name shell chmod 755 /data/androidvncserver
-adb -s $adb_name forward tcp:$vnc_port tcp:5901
+adb -s $adb_name forward tcp:$vnc_internal_port tcp:5901
 adb -s $adb_name shell /data/androidvncserver -k "/dev/input/event0" -t "/dev/input/event0"&
 vncserver_pid=$!
 
 cd $novnc_path
-$novnc_path/utils/launch.sh --listen $vnc_port --vnc localhost:$vnc_port --web $novnc_path&
+$novnc_path/utils/launch.sh --listen $vnc_port --vnc localhost:$vnc_internal_port --web $novnc_path&
 novnc_pid=$!
 
 while [ 1 ]

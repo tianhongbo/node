@@ -12,6 +12,7 @@ novnc_path=/home/ubuntu2/noVNC
 adb_name=$1
 device_ip=$2
 vnc_port=$3
+vnc_internal_port='expr $vnc_port + 40'
 ssh_port=$4
 echo "adb_name=$adb_name, device_ip=$device_ip, vnc_port=$vnc_port, ssh_port=$ssh_port"
 
@@ -38,11 +39,11 @@ adb -s $adb_name shell 'su -c "setprop net.dns2 0.0.0.0"'
 adb -s $adb_name forward tcp:$ssh_port tcp:22
 
 #configure VNC
-adb -s $adb_name forward tcp:$vnc_port tcp:5901
+adb -s $adb_name forward tcp:$vnc_internal_port tcp:5901
 
 #start vnc proxy on the host
 #/Users/Scott/noVNC/utils/launch.sh --listen 5910 --vnc 192.168.1.16:5901 --web /Users/Scott/noVNC
 cd $novnc_path
-$novnc_path/utils/launch.sh --listen $vnc_port --vnc localhost:$vnc_port --web $novnc_path&
+$novnc_path/utils/launch.sh --listen $vnc_port --vnc localhost:$vnc_internal_port --web $novnc_path&
 
 

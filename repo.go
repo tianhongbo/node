@@ -42,8 +42,15 @@ const THIS_HOST_NAME = "host101"
 const EMULATOR_MIN_PORT = 5554
 const EMULATOR_MAX_PORT = 5584
 const EMULATOR_MAX_NUM = (EMULATOR_MAX_PORT-EMULATOR_MIN_PORT)/2
+
+//For external use
 const VNC_MIN_PORT = 5901
 const VNC_MAX_PORT = 5920
+
+//For localhost ADB mapping
+//To avoid the conflict with external use VNC port
+const VNC_INTERNAL_MIN_PORT = 5941
+const VNC_INTERNAL_MIN_PORT = 5960
 
 const SSH_MIN_PORT = 5921
 const SSH_MAX_PORT = 5940
