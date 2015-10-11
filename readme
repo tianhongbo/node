@@ -29,8 +29,24 @@ $ sudo vi /etc/environment
 - add GOPATH
 GOPATH=/home/ubuntu2/controller
 
+Step 8: configure port forwarding
+- iptables for Ubuntu
+- ip for mac
+
+
 
 #Done
+
+#Debugging
+1. check adb forward
+- $ adb forward --list
+
+#SSH
+# user: "test" / password: "test"
+ssh test@192.168.1.24 -p 5921
+
+#VNC
+
 
 2. /etc/rc.local
 start node automatically when instance booting

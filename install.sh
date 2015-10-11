@@ -11,7 +11,7 @@ trap 'echo "Exit 2(os.Interrupt signal detected... vncserver_id=$vncserver_pid, 
 # For Ubutun
 vnc_server_path=/home/ubuntu2/controller/src/github.com/tianhongbo/node
 ssh_server_path=/home/ubuntu2/controller/src/github.com/tianhongbo/node
-novnc_path=/home/ubuntu2/controller/noVNC
+novnc_path=/home/ubuntu2/noVNC
 
 # ADB name, vnc_port, ssh_port
 adb_name=$1

@@ -6,7 +6,7 @@
 
 For Ubuntu
 vnc_server_path=/home/ubuntu2/controller/src/github.com/tianhongbo/node
-novnc_path=/home/ubuntu2/controller/noVNC
+novnc_path=/home/ubuntu2/noVNC
 
 # ADB name, device_ip, vnc_port, ssh_port
 adb_name=$1
