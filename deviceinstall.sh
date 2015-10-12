@@ -12,7 +12,7 @@ novnc_path=/home/ubuntu2/noVNC
 adb_name=$1
 device_ip=$2
 vnc_port=$3
-vnc_internal_port=`expr $vnc_port + 20`
+vnc_internal_port=`expr $vnc_port + 40`
 ssh_port=$4
 echo "adb_name=$adb_name, device_ip=$device_ip, vnc_port=$vnc_port, ssh_port=$ssh_port"
 
